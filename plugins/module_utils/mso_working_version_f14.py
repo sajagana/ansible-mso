@@ -307,6 +307,7 @@ class MSOModule(object):
         self.url = None
         self.nd_base_path = None
         self.httpapi_logs = list()
+        self.backup_name = None
 
         if self.module._debug:
             self.module.warn("Enable debug output because ANSIBLE_DEBUG was set.")
@@ -406,6 +407,7 @@ class MSOModule(object):
             self.error = self.jsondata
 
     def request_download(self, path, destination=None):
+        self.httpapi_logs.append("Inside request_download - 0.1")
         self.url = urljoin(self.baseuri, path)
         redirected = False
         redir_info = {}
@@ -426,21 +428,25 @@ class MSOModule(object):
         data = None
 
         kwargs = {}
+        file_name = None
         if os.path.isdir(destination):
-            # first check if we are redirected to a file download
             if self.platform != "nd":
+                # first check if we are redirected to a file download
                 check, redir_info = fetch_url(self.module, self.url, headers=self.headers, method="GET", timeout=self.params.get("timeout"))
                 file_name = check.headers.get("Content-Disposition").split("filename=")[1]
             else:
                 redir_info = json.loads(
                     json.dumps(self.connection.get_remote_file_io_stream("/{0}{1}".format(self.nd_base_path, path), self.module.tmpdir, "GET"))
                 )
-                if redir_info.get("content-disposition"):
-                    file_name = redir_info.get("content-disposition").split("filename=")[1]
-                else:
-                    self.fail_json(msg="Failed to fetch NDO: {0} backup information, response: {1}".format(self.params.get("backup"), redir_info))
 
-            # if we are redirected, update the url with the location header and update dest with the new url filename
+                # self.httpapi_logs.append("redir_info: {0}".format(redir_info))
+                # self.httpapi_logs.extend(self.connection.pop_messages())
+                # self.httpapi_logs.append("After pop messages... request_download")
+                # self.exit_json()
+                file_name = redir_info.get("content-disposition").split("filename=")[1]
+
+            # if we are redirected, update the url with the location header,
+            # and update dest with the new url filename
             if redir_info["status"] in (301, 302, 303, 307):
                 self.url = redir_info.get("location")
                 redirected = True
@@ -450,12 +456,26 @@ class MSOModule(object):
         if os.path.exists(destination):
             kwargs["last_mod_time"] = datetime.datetime.utcfromtimestamp(os.path.getmtime(destination))
 
+        # if self.platform == "nd":
+        #     if os.path.isdir(destination):
+        #         self.httpapi_logs.append("Inside request_download - 0")
+        #         info = json.loads(json.dumps(self.connection.get_remote_file_io_stream("/{0}{1}".format(self.nd_base_path, path), self.module.tmpdir, "GET")))
+        #         info.pop("raw")
+        #         self.httpapi_logs.append("Sab Inside request_download - 1: {0}".format(info))
+
+        #         if info["status"] in (301, 302, 303, 307):
+        #             self.url = info.get("location")
+        #             redirected = True
+        #         destination = os.path.join(destination, info.get("content-disposition").split("filename=")[1])
+        #     # if destination file already exist, only download if file newer
+        #     if os.path.exists(destination):
+        #         kwargs["last_mod_time"] = datetime.datetime.utcfromtimestamp(os.path.getmtime(destination))
+
         if redir_info["status"] == 200 and redirected == False and self.platform == "nd":
             info = redir_info
-        elif self.platform == "nd":
+        else:
             info = json.loads(json.dumps(self.connection.get_remote_file_io_stream("/mso{0}".format(self.url.split("mso", 1)), self.module.tmpdir, "GET")))
 
-        # Removing the raw byte string from the response - for ND platform
         if info.get("raw"):
             info.pop("raw")
 
@@ -488,7 +508,14 @@ class MSOModule(object):
         redirect.update(redir_info)
         redirect.update(info)
 
+        self.httpapi_logs.extend(self.connection.pop_messages())
+        self.httpapi_logs.append("After pop messages... request_download: {0}".format(info))
+
+        # self.exit_json()
         write_file(self.module, self.url, destination, content, redirect, info.get("tmpsrc"))
+
+        self.httpapi_logs.extend(self.connection.pop_messages())
+        self.httpapi_logs.append("After pop messages... request_download")
 
         return redirect, destination
 
@@ -496,19 +523,17 @@ class MSOModule(object):
         """Generic HTTP MultiPart POST method for MSO uploads."""
         self.path = path
         self.url = urljoin(self.baseuri, path)
-        info = dict()
+        # info = dict() # Need to delete by Sab
+
         if self.platform == "nd":
             try:
-                if os.path.exists(self.params.get("backup")):
-                    info = json.loads(
-                        json.dumps(
-                            self.connection.send_file_request(
-                                method, "/{0}{1}".format(self.nd_base_path, path), file=self.params.get("backup"), remote_path=self.params.get("remote_path")
-                            )
+                info = json.loads(
+                    json.dumps(
+                        self.connection.send_file_request(
+                            method, "/{0}{1}".format(self.nd_base_path, path), file=self.params.get("backup"), remote_path=self.params.get("remote_path")
                         )
                     )
-                else:
-                    self.fail_json(msg="Upload failed due to: No such file or directory, Backup file: '{0}'".format(self.params.get("backup")))
+                )
             except Exception as error:
                 self.fail_json("NDO upload failed due to: {0}".format(error))
         else:
@@ -531,6 +556,7 @@ class MSOModule(object):
 
         self.response = info.get("msg")
         self.status = info.get("status")
+
         # Get change status from HTTP headers
         if "modified" in info:
             self.has_modified = True
@@ -551,24 +577,22 @@ class MSOModule(object):
         # 400: Bad Request, 401: Unauthorized, 403: Forbidden,
         # 405: Method Not Allowed, 406: Not Acceptable
         # 500: Internal Server Error, 501: Not Implemented
-        elif self.status:
-            if self.status >= 400:
-                try:
-                    if self.platform == "nd":
-                        payload = info.get("body")
-                    else:
-                        payload = json.loads(resp.read())
-                except (ValueError, AttributeError):
-                    try:
-                        payload = json.loads(info.get("body"))
-                    except Exception:
-                        self.fail_json(msg="MSO Error:", info=info)
-                if "code" in payload:
-                    self.fail_json(msg="MSO Error {code}: {message}".format(**payload), info=info, payload=payload)
+        elif self.status >= 400:
+            try:
+                if self.platform == "nd":
+                    payload = info.get("body")
                 else:
-                    self.fail_json(msg="MSO Error:".format(**payload), info=info, payload=payload)
-        else:
-            self.fail_json(msg="Backup file upload failed due to: {0}".format(info))
+                    payload = json.loads(resp.read())
+            except (ValueError, AttributeError):
+                try:
+                    payload = json.loads(info.get("body"))
+                except Exception:
+                    self.fail_json(msg="MSO Error:", info=info)
+            if "code" in payload:
+                self.fail_json(msg="MSO Error {code}: {message}".format(**payload), info=info, payload=payload)
+            else:
+                self.fail_json(msg="MSO Error:".format(**payload), info=info, payload=payload)
+
         return {}
 
     def request(self, path, method=None, data=None, qs=None, api_version="v1"):
@@ -606,9 +630,16 @@ class MSOModule(object):
 
             if qs is not None:
                 uri = uri + update_qs(qs)
-
+            logdata = dict(method=method, uri=uri, indata=json.dumps(data))
             try:
+                self.httpapi_logs.append("Inside request method logdata: {0}".format(logdata))
+
                 info = json.loads(json.dumps(self.connection.send_request(method, uri, json.dumps(data))))
+                self.httpapi_logs.append("Inside request method type of info: {0}".format(type(info)))
+                self.httpapi_logs.append("Inside request method info value: {0}".format(info))
+                self.httpapi_logs.extend(self.connection.pop_messages())
+                self.httpapi_logs.append("After pop messages...")
+                # self.exit_json()
                 self.url = info.get("url")
                 info.pop("date")
             except Exception as e:

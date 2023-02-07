@@ -2,14 +2,17 @@
 # -*- coding: utf-8 -*-
 
 # Copyright: (c) 2020, Shreyas Srish (@shrsr) <ssrish@cisco.com>
-# Copyright: (c) 2023, Lionel Hercot (@lhercot) <lhercot@cisco.com>
 # GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
 
 from __future__ import absolute_import, division, print_function
 
 __metaclass__ = type
 
-ANSIBLE_METADATA = {"metadata_version": "1.1", "status": ["preview"], "supported_by": "community"}
+ANSIBLE_METADATA = {
+    "metadata_version": "1.1",
+    "status": ["preview"],
+    "supported_by": "community",
+}
 
 DOCUMENTATION = r"""
 ---
@@ -19,7 +22,6 @@ description:
 - Manage backups on Cisco ACI Multi-Site.
 author:
 - Shreyas Srish (@shrsr)
-- Lionel Hercot (@lhercot)
 options:
   location_type:
     description:
@@ -30,15 +32,8 @@ options:
   backup:
     description:
     - The name given to the backup
-    - C(backup) is mutually exclusive with C(backup_id). Only use one of the two.
     type: str
     aliases: [ name ]
-  backup_id:
-    description:
-    - The id of a specific backup
-    - C(backup_id) is mutually exclusive with C(backup). Only use one of the two.
-    type: str
-    aliases: [ id ]
   remote_location:
     description:
     - The remote location's name where the backup should be stored
@@ -177,8 +172,25 @@ RETURN = r"""
 """
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible_collections.cisco.mso.plugins.module_utils.mso import MSOModule, mso_argument_spec
+from ansible_collections.cisco.mso.plugins.module_utils.mso import (
+    MSOModule,
+    mso_argument_spec,
+)
 import os
+
+# from ansible_collections.cisco.mso.plugins.module_utils.httpapi.mso import HttpApi
+
+
+
+# from ansible_collections.cisco.mso.plugins.httpapi.mso import (
+#     HttpApi
+# )
+
+
+# from ansible_collections.cisco.mso.plugins.httpapi.mso import (
+#     HttpApi
+# )
+
 
 
 def main():
@@ -187,10 +199,21 @@ def main():
         location_type=dict(type="str", default="local", choices=["local", "remote"]),
         description=dict(type="str"),
         backup=dict(type="str", aliases=["name"]),
-        backup_id=dict(type="str", aliases=["id"]),
         remote_location=dict(type="str"),
         remote_path=dict(type="str"),
-        state=dict(type="str", default="present", choices=["absent", "present", "query", "upload", "restore", "download", "move"]),
+        state=dict(
+            type="str",
+            default="present",
+            choices=[
+                "absent",
+                "present",
+                "query",
+                "upload",
+                "restore",
+                "download",
+                "move",
+            ],
+        ),
         destination=dict(type="str"),
     )
 
@@ -198,18 +221,13 @@ def main():
         argument_spec=argument_spec,
         supports_check_mode=True,
         required_if=[
-            ["location_type", "remote", ["remote_location", "remote_path"]],
-            ["state", "absent", ["backup", "backup_id"], True],
+            ["location_type", "remote", ["remote_location"]],
+            ["state", "absent", ["backup"]],
             ["state", "present", ["backup"]],
-            ["state", "upload", ["backup", "backup_id"], True],
-            ["state", "restore", ["backup", "backup_id"], True],
-            ["state", "download", ["backup", "backup_id"], True],
-            ["state", "download", ["destination"]],
-            ["state", "move", ["backup", "backup_id"], True],
-            ["state", "move", ["remote_location", "remote_path"]],
-        ],
-        mutually_exclusive=[
-            ("backup", "backup_id"),
+            ["state", "upload", ["backup"]],
+            ["state", "restore", ["backup"]],
+            ["state", "download", ["backup", "destination"]],
+            ["state", "move", ["backup", "remote_location", "remote_path"]],
         ],
     )
 
@@ -217,23 +235,22 @@ def main():
     location_type = module.params.get("location_type")
     state = module.params.get("state")
     backup = module.params.get("backup")
-    backup_id = module.params.get("backup_id")
     remote_location = module.params.get("remote_location")
     remote_path = module.params.get("remote_path")
     destination = module.params.get("destination")
 
     mso = MSOModule(module)
 
+    # HttpApiObj = HttpApi(module)
+
     backup_names = []
     mso.existing = mso.query_objs("backups/backupRecords", key="backupRecords")
-    if backup or backup_id:
+    if backup:
         if mso.existing:
             data = mso.existing
             mso.existing = []
             for backup_info in data:
-                if (backup_id and backup_id == backup_info.get("id")) or (
-                    backup and (backup == backup_info.get("name").split("_")[0] or backup == backup_info.get("name"))
-                ):
+                if backup == backup_info.get("name").split("_")[0] or backup == backup_info.get("name"):
                     mso.existing.append(backup_info)
                     backup_names.append(backup_info.get("name"))
 
@@ -248,7 +265,10 @@ def main():
             if module.check_mode:
                 mso.existing = {}
             else:
-                mso.existing = mso.request("backups/backupRecords/{id}".format(id=mso.existing[0].get("id")), method="DELETE")
+                mso.existing = mso.request(
+                    "backups/backupRecords/{id}".format(id=mso.existing[0].get("id")),
+                    method="DELETE",
+                )
         mso.exit_json()
 
     elif state == "present":
@@ -277,20 +297,26 @@ def main():
         if module.check_mode:
             mso.existing = mso.proposed
         else:
-            try:
-                request_url = "backups/upload"
-                payload = dict()
-                if mso.platform == "nd":
-                    if remote_location is None or remote_path is None:
-                        mso.module.fail_json(msg="NDO backup upload failed: remote_location and remote_path is required for NDO backup upload")
-                    remote_location_info = mso.lookup_remote_location(remote_location)
-                    request_url = "backups/remoteUpload/{0}".format(remote_location_info.get("id"))
-                else:
-                    payload = dict(name=(os.path.basename(backup), open(backup, "rb"), "application/x-gzip"))
+            # try:
+            request_url = "backups/upload"
+            payload = dict(
+                name=(
+                    os.path.basename(backup),
+                    open(backup, "rb"),
+                    "application/x-gzip",
+                )
+            )
+            if mso.platform == "nd":
+                if remote_location is None or remote_path is None:
+                    mso.module.fail_json(msg="NDO backup upload failed: remote_location and remote_path is required for NDO backup upload")
 
-                mso.existing = mso.request_upload(request_url, fields=payload)
-            except Exception as error:
-                mso.module.fail_json(msg="Upload failed due to: {0}, Backup file: '{1}'".format(error, ", ".join(backup.split("/")[-1:])))
+                remote_location_info = mso.lookup_remote_location(remote_location)
+                payload["rdir"] = "{0}/{1}".format(remote_location_info.get("path"), remote_path)
+                request_url = "backups/remoteUpload/{0}".format(remote_location_info.get("id"))
+
+            mso.existing = mso.request_upload(request_url, fields=payload)
+            # except Exception as error:
+            #     mso.module.fail_json(msg="Upload failed due to: {0}, Backup file: '{1}'".format(error, ", ".join(backup.split("/")[-1:])))
         mso.exit_json()
 
     if len(mso.existing) == 0:
@@ -303,20 +329,33 @@ def main():
         if module.check_mode:
             mso.existing = mso.proposed
         else:
-            mso.existing = mso.request("backups/{id}/restore".format(id=mso.existing[0].get("id")), method="PUT")
+            mso.existing = mso.request(
+                "backups/{id}/restore".format(id=mso.existing[0].get("id")),
+                method="PUT",
+            )
 
     elif state == "download":
         mso.previous = mso.existing
         if module.check_mode:
             mso.existing = mso.proposed
         else:
-            mso.existing = mso.request_download("backups/{id}/download".format(id=mso.existing[0].get("id")), destination=destination)
+            # HttpApiObj.send_request("GET", "backups/{id}/download".format(id=mso.existing[0].get("id")), data=None)
+
+            mso.existing = mso.request_download(
+                "backups/{id}/download".format(id=mso.existing[0].get("id")),
+                destination=destination,
+            )
+
 
     elif state == "move":
         mso.previous = mso.existing
         remote_location_info = mso.lookup_remote_location(remote_location)
         remote_path = "{0}/{1}".format(remote_location_info.get("path"), remote_path)
-        payload = dict(remoteLocationId=remote_location_info.get("id"), remotePath=remote_path, backupRecordId=mso.existing[0].get("id"))
+        payload = dict(
+            remoteLocationId=remote_location_info.get("id"),
+            remotePath=remote_path,
+            backupRecordId=mso.existing[0].get("id"),
+        )
         if module.check_mode:
             mso.existing = mso.proposed
         else:
@@ -326,4 +365,5 @@ def main():
 
 
 if __name__ == "__main__":
+    # printdd()
     main()
