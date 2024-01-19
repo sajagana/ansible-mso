@@ -55,6 +55,16 @@ options:
         - The name of the device
         required: true
         type: str
+      provider_connector_type:
+        description:
+        - Whether provider type is redirect in Azure apic
+        type: bool
+        default: false
+      consumer_connector_type:
+        description:
+        - Whether consumer type is redirect in Azure apic
+        type: bool
+        default: false
   state:
     description:
     - Use C(present) or C(absent) for adding or removing.
@@ -204,13 +214,14 @@ def main():
     ops = []
 
     mso.previous = mso.existing
+    devices_payload = []
+
     if state == "absent":
         if mso.existing:
             mso.sent = mso.existing = {}
             ops.append(dict(op="remove", path=service_graph_path))
 
     elif state == "present":
-        devices_payload = []
         service_graphs = templates[template_idx]["serviceGraphs"]
         for graph in service_graphs:
             if graph.get("name") == service_graph:
@@ -225,29 +236,38 @@ def main():
             )
 
         if devices is not None:
-            service_node_type_names_from_template = [type.get("name") for type in service_node_types_from_template]
+            service_node_types = mso.query_service_node_types()
+            service_node_type_ids_from_template = [type.get("serviceNodeTypeId") for type in service_node_types_from_template]
             for index, device in enumerate(devices):
-                template_node_type = service_node_type_names_from_template[index]
-                apic_type = "OTHERS"
+                template_node_type_id = service_node_type_ids_from_template[index]
+                template_node_type = next((node_type.get("name") for node_type in service_node_types if node_type.get("id") == template_node_type_id), None)
+
+                service_node_type = "OTHERS"
                 if template_node_type == "firewall":
-                    apic_type = "FW"
+                    service_node_type = "FW"
                 elif template_node_type == "load-balancer":
-                    apic_type = "ADC"
-                query_device_data = mso.lookup_service_node_device(site_id, tenant, device.get("name"), apic_type)
-                devices_payload.append(
-                    dict(
-                        device=dict(
-                            dn=query_device_data.get("dn"),
-                            funcTyp=query_device_data.get("funcType"),
-                        ),
-                        serviceNodeRef=dict(
-                            serviceNodeName=template_node_type,
-                            serviceGraphName=service_graph,
-                            templateName=template,
-                            schemaId=schema_id,
-                        ),
+                    service_node_type = "ADC"
+
+                query_device_data = mso.lookup_service_node_device(site_id, tenant, device.get("name"), service_node_type)
+                device_payload = dict(
+                    device=dict(
+                        dn=query_device_data.get("dn"),
+                        funcType=query_device_data.get("funcType"),
+                    ),
+                    serviceNodeRef=dict(
+                        serviceNodeName="node{0}".format(index + 1),
+                        serviceGraphName=service_graph,
+                        templateName=template,
+                        schemaId=schema_id,
                     ),
                 )
+
+                if mso.platform == "azure":
+                    if device.get("provider_connector_type") == "True":
+                        device_payload["providerConnectorType"] = "redir"
+                    if device.get("consumer_connector_type") == "True":
+                        device_payload["consumerConnectorType"] = "redir"
+                devices_payload.append(device_payload)
 
         payload = dict(
             serviceGraphRef=dict(

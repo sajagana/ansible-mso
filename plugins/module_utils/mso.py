@@ -207,6 +207,8 @@ def mso_service_graph_node_spec():
 def mso_service_graph_node_device_spec():
     return dict(
         name=dict(type="str", required=True),
+        provider_connector_type=dict(type="bool", default=False),
+        consumer_connector_type=dict(type="bool", default=False),
     )
 
 
@@ -329,6 +331,7 @@ class MSOModule(object):
         self.status = None
         self.url = None
         self.httpapi_logs = list()
+        self.platform = None
 
         if self.module._debug:
             self.module.warn("Enable debug output because ANSIBLE_DEBUG was set.")
@@ -853,6 +856,13 @@ class MSOModule(object):
             ids.append(dict(roleId=r.get("id"), accessType=access_type))
         return ids
 
+    def lookup_site_type(self, s):
+        """Get site type(AWS, AZURE or physical)"""
+        platform = s.get("platform")
+        if platform == "cloud":
+            self.platform = s.get("cloudProviders")[0]
+        self.platform = platform
+
     def lookup_site(self, site, ignore_not_found_error=False):
         """Look up a site and return its id"""
         if site is None:
@@ -866,6 +876,8 @@ class MSOModule(object):
             return None
         if "id" not in s:
             self.fail_json(msg="Site lookup failed for site '{0}': {1}".format(site, s))
+
+        self.lookup_site_type(s)
         return s.get("id")
 
     def lookup_sites(self, sites, ignore_not_found_error=False):
@@ -1440,3 +1452,16 @@ class MSOModule(object):
 
     def validate_schema(self, schema_id):
         return self.request("schemas/{id}/validate".format(id=schema_id), method="GET")
+
+
+def mso_schema_site_contract_service_graph_spec():
+    return dict(
+        cluster_interface_device=dict(type="str", required=True),
+        provider_connector_cluster_interface=dict(type="str", required=True),
+        provider_connector_redirect_policy_tenant=dict(type="str"),
+        provider_connector_redirect_policy=dict(type="str"),
+        consumer_connector_cluster_interface=dict(type="str", required=True),
+        consumer_connector_redirect_policy_tenant=dict(type="str"),
+        consumer_connector_redirect_policy=dict(type="str"),
+        consumer_subnet_ips=dict(type="list", elements="str"),
+    )
