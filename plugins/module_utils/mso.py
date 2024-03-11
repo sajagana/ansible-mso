@@ -1513,3 +1513,67 @@ def mso_schema_site_contract_service_graph_spec():
         consumer_connector_redirect_policy=dict(type="str", aliases=["consumer_redirect_policy", "consumer_policy"]),
         consumer_subnet_ips=dict(type="list", elements="str"),
     )
+
+
+def listener_ssl_certificates_spec():
+    return dict(
+        name=dict(type="str", required=True),
+        certificate_store=dict(type="str", choices=["default", "iam", "acm"], required=True),
+    )
+
+
+def listener_rules_provider_epg_ref_spec():
+    return dict(
+        schema=dict(type="str"),
+        template=dict(type="str"),
+        anp_name=dict(type="str", required=True, aliases=["anp"]),
+        epg_name=dict(type="str", required=True, aliases=["epg"]),
+    )
+
+
+def listener_rules_health_check_spec():
+    return dict(
+        port=dict(type="int"),
+        protocol=dict(type="str", choices=LISTENER_PROTOCOLS),
+        path=dict(type="str"),
+        interval=dict(type="int"),
+        timeout=dict(type="int"),
+        unhealthy_threshold=dict(type="int"),
+        use_host_from_rule=dict(type="bool"),
+        success_code=dict(type="str"),
+        host=dict(type="str"),
+    )
+
+
+def listener_rules_spec():
+    return dict(
+        name=dict(type="str", required=True),
+        floating_ip=dict(type="str"),
+        priority=dict(type="int", required=True),
+        host=dict(type="str"),
+        path=dict(type="str"),
+        action=dict(type="str"),
+        action_type=dict(type="str", required=True, choices=list(LISTENER_ACTION_TYPE_MAP)),
+        content_type=dict(type="str", choices=list(LISTENER_CONTENT_TYPE_MAP)),
+        port=dict(type="int"),
+        protocol=dict(type="str", choices=LISTENER_PROTOCOLS),
+        provider_epg_ref=dict(
+            type="dict",
+            options=listener_rules_provider_epg_ref_spec(),
+        ),
+        url_type=dict(type="str", choices=["original", "custom"]),
+        custom_url=dict(type="str"),
+        redirect_host_name=dict(type="str"),
+        redirect_path=dict(type="str"),
+        redirect_query=dict(type="str"),
+        response_code=dict(type="str"),
+        response_body=dict(type="str"),
+        redirect_protocol=dict(type="str", choices=LISTENER_PROTOCOLS),
+        redirect_port=dict(type="int"),
+        redirect_code=dict(type="str", choices=list(LISTENER_REDIRECT_CODE_MAP)),
+        health_check=dict(
+            type="dict",
+            options=listener_rules_health_check_spec(),
+        ),
+        target_ip_type=dict(type="str", choices=["unspecified", "primary", "secondary"]),
+    )

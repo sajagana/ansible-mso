@@ -279,25 +279,3 @@ class MSOSchema:
             msg = "Provided Site Service Graph '{0}' not matching existing site service graph(s): {1}".format(site_service_graph, ", ".join(existing))
             self.mso.fail_json(msg=msg)
         self.schema_objects["site_service_graph"] = match
-
-    # def set_site_contract_sg(site_contract_sg, fail_module=True):
-    #     """
-    #     Get site contract service graph item that matches the name of a service graph.
-    #     :param site_contract_sg: Name of the service graph to match. -> Str
-    #     :param fail_module: When match is not found fail the ansible module. -> Bool
-    #     :return: Site contract service graph item. -> Item(Int, Dict) | None
-    #     """
-
-    #     self.validate_schema_objects_present(["template", "site", "site_contract"])
-    #     kv_list = [
-    #         KVPair(
-    #             "serviceGraphRef",
-    #             self.mso.service_graph_ref(schema_id=self.id, template=self.schema_objects["template"].details.get("name"), service_graph=service_graph),
-    #         )
-    #     ]
-    #     site_service_graph_relationship = self.schema_objects["site"].details.get("contracts").get("serviceGraphRelationship")
-    #     match, existing = self.get_object_from_list(site_service_graph_relationship, kv_list)
-    #     if not match and fail_module:
-    #         msg = "Provided Site Contract Service Graph '{0}' not matching existing site contract(s): {1}".format(site_contract_sg, ", ".join(existing))
-    #         self.mso.fail_json(msg=msg)
-    #     self.schema_objects["site_contract_sg"] = match

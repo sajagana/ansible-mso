@@ -275,70 +275,125 @@ extends_documentation_fragment: cisco.mso.modules
 
 
 EXAMPLES = r"""
-- name: Associate a service graph with a site contract
-  cisco.mso.mso_schema_site_contract_service_graph:
+- name: Add a listener for Network Load-Balancer
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
     host: mso_host
     username: admin
     password: SomeSecretPassword
-    tenant: sab_ansible_tenant
-    schema: sab_ansible_schema
-    template: sab_ansible_template1
-    site: ansible_test
-    contract: Contract1
-    service_graph_schema: sab_ansible_schema
-    service_graph_template: sab_ansible_template1
-    service_graph: sab_sg
-    node_relationship:
-      - cluster_interface_device: sab_ansible_tenant_firewall1
-        provider_connector_cluster_interface: clu_if1
-        provider_connector_redirect_policy: redirect_policy1
-        consumer_connector_cluster_interface: clu_if1
-        consumer_connector_redirect_policy: redirect_policy1
-      - cluster_interface_device: sab_ansible_tenant_adc
-        provider_connector_cluster_interface: clu_if3
-        provider_connector_redirect_policy: redirect_policy1
-        consumer_connector_cluster_interface: clu_if3
-        consumer_connector_redirect_policy: redirect_policy1
-        consumer_subnet_ips: ["1.1.1.1/24", "4.4.4.4/24"]
-      - cluster_interface_device: sab_ansible_tenant_other
-        provider_connector_cluster_interface: clu_if4
-        provider_connector_redirect_policy: redirect_policy1
-        consumer_connector_cluster_interface: clu_if4
-        consumer_connector_redirect_policy: redirect_policy1
-    state: present
+    contract: "Contract2"
+    schema: mso_schema
+    template: ansible_template1
+    site: mso_site
+    service_node_index: 0
+    listener: nlb_li_tcp
+    listener_port: 80
+    listener_protocol: tcp
+    tenant: mso_tenant
+    frontend_ip: "10.10.10.10"
+    device: ans_test_nlb
+    security_policy: default
+    rules:
+      - name: rule1
+        priority: 1
+        action_type: forward
+        port: 80
+        protocol: tcp
+        health_check:
+          port: 80
+          protocol: tcp
+          interval: 5
+          unhealthy_threshold: 2
+          success_code: 200-399
 
-- name: Query a site contract service graph with contract name
-  cisco.mso.mso_schema_site_contract_service_graph:
+- name: Add a listener for Application Load-Balancer
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
     host: mso_host
     username: admin
     password: SomeSecretPassword
-    schema: sab_ansible_schema
-    template: sab_ansible_template1
-    contract: Contract1
-    site: ansible_test
+    contract: "Contract2"
+    schema: mso_schema
+    template: ansible_template1
+    site: mso_site
+    service_node_index: 1
+    listener: aplb_li_https
+    tenant: mso_tenant
+    device: ans_test_aplb
+    listener_port: 443
+    listener_protocol: https
+    security_policy: default
+    ssl_certificates:
+      - name: ans_test_keyring
+        certificate_store: default
+    rules:
+      - name: rule1
+        priority: 1
+        action_type: forward
+        port: 80
+        protocol: http
+        provider_epg_ref:
+          anp_name: AP1
+          epg_name: EPG1
+        health_check:
+          port: 80
+          protocol: http
+          path: "health_check_path"
+          interval: 30
+          timeout: 30
+          unhealthy_threshold: 3
+          use_host_from_rule: true
+          success_code: "200"
+        target_ip_type: unspecified
+
+- name: Query all listeners
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    host: mso_host
+    username: admin
+    password: SomeSecretPassword
+    contract: "Contract2"
+    schema: mso_schema
+    template: ansible_template1
+    site: mso_site
     state: query
-  register: query_result
+  register: query_all_listeners
 
-- name: Query all site contract service graphs associated with a site template
-  cisco.mso.mso_schema_site_contract_service_graph:
+- name: Query all listeners with name ans_li_common
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
     host: mso_host
     username: admin
     password: SomeSecretPassword
-    schema: sab_ansible_schema
-    template: sab_ansible_template1
-    site: ansible_test
+    contract: "Contract2"
+    schema: mso_schema
+    template: ansible_template1
+    site: mso_site
+    listener: ans_li_common
     state: query
-  register: query_result
+  register: query_all_ans_li_common
 
-- name: Remove a site contract service graph with contract name
-  cisco.mso.mso_schema_site_contract_service_graph:
+- name: Query a listener with name - aplb_li_https
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
     host: mso_host
     username: admin
     password: SomeSecretPassword
-    schema: sab_ansible_schema
-    template: sab_ansible_template1
-    site: ansible_test
-    contract: Contract1
+    contract: "Contract2"
+    schema: mso_schema
+    template: ansible_template1
+    site: mso_site
+    service_node_index: 1
+    listener: aplb_li_https
+    state: query
+  register: query_aplb_li_https
+
+- name: Remove an existing listener - ans_li_common
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    host: mso_host
+    username: admin
+    password: SomeSecretPassword
+    contract: "Contract2"
+    schema: mso_schema
+    template: ansible_template1
+    site: mso_site
+    service_node_index: 1
+    listener: aplb_li_https
     state: absent
 """
 
@@ -346,73 +401,16 @@ RETURN = r"""
 """
 
 
-def listener_ssl_certificates_spec():
-    return dict(
-        name=dict(type="str", required=True),
-        certificate_store=dict(type="str", choices=["default", "iam", "acm"], required=True),
-    )
-
-
-def listener_rules_provider_epg_ref_spec():
-    return dict(
-        schema=dict(type="str"),
-        template=dict(type="str"),
-        anp_name=dict(type="str", required=True, aliases=["anp"]),
-        epg_name=dict(type="str", required=True, aliases=["epg"]),
-    )
-
-
-def listener_rules_health_check_spec():
-    return dict(
-        port=dict(type="int"),
-        protocol=dict(type="str", choices=LISTENER_PROTOCOLS),
-        path=dict(type="str"),
-        interval=dict(type="int"),
-        timeout=dict(type="int"),
-        unhealthy_threshold=dict(type="int"),
-        use_host_from_rule=dict(type="bool"),
-        success_code=dict(type="str"),
-        host=dict(type="str"),
-    )
-
-
-def listener_rules_spec():
-    return dict(
-        name=dict(type="str", required=True),
-        floating_ip=dict(type="str"),
-        priority=dict(type="int", required=True),
-        host=dict(type="str"),
-        path=dict(type="str"),
-        action=dict(type="str"),
-        action_type=dict(type="str", required=True, choices=list(LISTENER_ACTION_TYPE_MAP)),
-        content_type=dict(type="str", choices=list(LISTENER_CONTENT_TYPE_MAP)),
-        port=dict(type="int"),
-        protocol=dict(type="str", choices=LISTENER_PROTOCOLS),
-        provider_epg_ref=dict(
-            type="dict",
-            options=listener_rules_provider_epg_ref_spec(),
-        ),
-        url_type=dict(type="str", choices=["original", "custom"]),
-        custom_url=dict(type="str"),
-        redirect_host_name=dict(type="str"),
-        redirect_path=dict(type="str"),
-        redirect_query=dict(type="str"),
-        response_code=dict(type="str"),
-        response_body=dict(type="str"),
-        redirect_protocol=dict(type="str", choices=LISTENER_PROTOCOLS),
-        redirect_port=dict(type="int"),
-        redirect_code=dict(type="str", choices=list(LISTENER_REDIRECT_CODE_MAP)),
-        health_check=dict(
-            type="dict",
-            options=listener_rules_health_check_spec(),
-        ),
-        target_ip_type=dict(type="str", choices=["unspecified", "primary", "secondary"]),
-    )
-
-
 from ansible.module_utils.basic import AnsibleModule
 from ansible_collections.cisco.mso.plugins.module_utils.schema import MSOSchema
-from ansible_collections.cisco.mso.plugins.module_utils.mso import MSOModule, mso_argument_spec
+from ansible_collections.cisco.mso.plugins.module_utils.mso import (
+    MSOModule,
+    mso_argument_spec,
+    listener_ssl_certificates_spec,
+    listener_rules_provider_epg_ref_spec,
+    listener_rules_health_check_spec,
+    listener_rules_spec,
+)
 from ansible_collections.cisco.mso.plugins.module_utils.constants import (
     LISTENER_REDIRECT_CODE_MAP,
     LISTENER_CONTENT_TYPE_MAP,
