@@ -1,0 +1,202 @@
+# --------- Temp code test ends ---------
+
+- name: Update listener - aplb_li_ans_http
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract1"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: Template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+    listener: aplb_li_ans_http
+    listener_port: 80
+    listener_protocol: http
+    security_policy: default
+    rules:
+      - name: default_new
+        priority: 2
+        # action:
+        #   - Redirect To Original
+        action_type: redirect
+        content_type: text_plain
+        port: 80
+        protocol: https
+        url_type: original
+        response_code: "200"
+        redirect_protocol: inherit
+        redirect_port: 443
+        redirect_code: permanently_moved
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Add listener - aplb_li_ans_new
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract1"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: Template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+    listener: aplb_li_ans_new
+    listener_port: 80
+    listener_protocol: http
+    security_policy: default
+    rules:
+      - name: default_new1
+        priority: 3
+        # action:
+        #   - Redirect To Original
+        action_type: redirect
+        content_type: text_plain
+        port: 80
+        protocol: https
+        url_type: original
+        response_code: "200"
+        redirect_protocol: inherit
+        redirect_port: 443
+        redirect_code: permanently_moved
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Add listener - aplb_li_ans_new - when the parent is empty - index 1 - contract3
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract3"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: Template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 1
+    device: ansible_tenant_xyz_app_lb
+    tenant: ansible_tenant_xyz
+    listener: aplb_li_ans_new
+    listener_port: 80
+    listener_protocol: http
+    security_policy: default
+    rules:
+      - name: default_new1
+        priority: 3
+        # action:
+        #   - Redirect To Original
+        action_type: redirect
+        content_type: text_plain
+        port: 80
+        protocol: https
+        url_type: original
+        response_code: "200"
+        redirect_protocol: inherit
+        redirect_port: 443
+        redirect_code: permanently_moved
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Add listener - aplb_li_ans_new - when the parent is present - index 0 - contract3 - should fail
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract3"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: Template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+    device: ansible_tenant_xyz_adc
+    tenant: ansible_tenant_xyz
+    listener: aplb_li_ans_new1
+    listener_port: 80
+    listener_protocol: http
+    security_policy: default
+    rules:
+      - name: default_new2
+        priority: 2
+        # action:
+        #   - Redirect To Original
+        action_type: redirect
+        content_type: text_plain
+        port: 80
+        protocol: https
+        url_type: original
+        response_code: "200"
+        redirect_protocol: inherit
+        redirect_port: 443
+        redirect_code: permanently_moved
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Add listener - aplb_li_ans_new - when the parent is empty - index 2 - contract3
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract3"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: Template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 2
+    device: ansible_tenant_xyz_other
+    tenant: ansible_tenant_xyz
+    listener: aplb_li_ans_new1
+    listener_port: 80
+    listener_protocol: http
+    security_policy: default
+    rules:
+      - name: default_new2
+        priority: 2
+        # action:
+        #   - Redirect To Original
+        action_type: redirect
+        content_type: text_plain
+        port: 80
+        protocol: https
+        url_type: original
+        response_code: "200"
+        redirect_protocol: inherit
+        redirect_port: 443
+        redirect_code: permanently_moved
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Add listener - aplb_li_ans_new - when the parent is empty - index 1 - contract3
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract3"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: Template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 1
+    device: ansible_tenant_xyz_app_lb
+    tenant: ansible_tenant_xyz
+    listener: aplb_li_ans_new1
+    listener_port: 80
+    listener_protocol: http
+    security_policy: default
+    rules:
+      - name: default_new2
+        priority: 2
+        # action:
+        #   - Redirect To Original
+        action_type: redirect
+        content_type: text_plain
+        port: 80
+        protocol: https
+        url_type: original
+        response_code: "200"
+        redirect_protocol: inherit
+        redirect_port: 443
+        redirect_code: permanently_moved
+        target_ip_type: unspecified
+  ignore_errors: true
+# - name: Remove an existing listener - nlb_li_tcp
+#   cisco.mso.mso_schema_site_contract_service_graph_listener:
+#     <<: *mso_info
+#     schema: '{{ mso_schema | default("ansible_test") }}'
+#     site: '{{ mso_site | default("ansible_test") }}'
+#     template: Template1
+#     contract: "Contract1"
+#     service_node_index: 0
+#     listener: nlb_li_tcp
+#     # listener_port: 80
+#     # listener_protocol: udp
+#     # tenant: ansible_tenant_xyz
+#     # frontend_ip: "3.3.3.3"
+#     # device: ansible_tenant_xyz_app_lb
+#     # security_policy: default
+#     state: absent
+#   check_mode: true
+# site_id, template, contract, service_node_index, listener
+# --------- Temp code test ends ---------

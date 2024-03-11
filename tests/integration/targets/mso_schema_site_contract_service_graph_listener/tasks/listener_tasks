@@ -1,0 +1,785 @@
+# Need to copy the below copy of listener_tasks
+- name: Remove listener - nlb_li_ans_udp
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract2"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+    name: nlb_li_ans_udp
+    listener_port: 80
+    listener_protocol: udp
+    tenant: '{{ mso_tenant | default("ansible_test") }}'
+    frontend_ip: "3.3.3.3"
+    device: '{{ mso_tenant | default("ansible_test") }}_other'
+    security_policy: default
+    state: absent
+    # ssl_certificates: []
+    rules:
+      - name: default
+        priority: 0
+        # action:
+        #   - Forward To EPG1
+        # condition:
+        #   - Request otherwise not routed
+        action_type: forward
+        content_type: text_plain
+        port: 80
+        protocol: udp
+        provider_epg_ref:
+          anp_name: AP1
+          epg_name: EPG1
+
+        url_type: original
+        redirect_protocol: inherit
+        redirect_code: permanently_moved
+        health_check:
+          port: 80
+          protocol: tcp
+          interval: 5
+          unhealthy_threshold: 2
+          use_host_from_rule: false # "no"(unchecked) - host should be specified in the rule
+          success_code: 200-399
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Query an non-existing listener - nlb_li_ans_udp
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract2"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+    name: nlb_li_ans_udp
+    listener_port: 80
+    listener_protocol: udp
+    tenant: '{{ mso_tenant | default("ansible_test") }}'
+    frontend_ip: "3.3.3.3"
+    device: '{{ mso_tenant | default("ansible_test") }}_other'
+    security_policy: default
+    state: query
+
+- name: Add listener - nlb_li_ans_udp
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract2"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+
+    name: nlb_li_ans_udp
+    listener_port: 80
+    listener_protocol: udp
+    tenant: '{{ mso_tenant | default("ansible_test") }}'
+    frontend_ip: "3.3.3.3"
+    device: '{{ mso_tenant | default("ansible_test") }}_other'
+    security_policy: default
+    # ssl_certificates: []
+    rules:
+      - name: default
+        priority: 0
+        # action:
+        #   - Forward To EPG1
+        # condition:
+        #   - Request otherwise not routed
+        action_type: forward
+        content_type: text_plain
+        port: 80
+        protocol: udp
+        provider_epg_ref:
+          anp_name: AP1
+          epg_name: EPG1
+
+        url_type: original
+        redirect_protocol: inherit
+        redirect_code: permanently_moved
+        health_check:
+          port: 80
+          protocol: tcp
+          interval: 5
+          unhealthy_threshold: 2
+          use_host_from_rule: false # "no"(unchecked) - host should be specified in the rule
+          success_code: 200-399
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Add listener - nlb_li_ans_udp - again
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract2"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+
+    name: nlb_li_ans_udp
+    listener_port: 80
+    listener_protocol: udp
+    tenant: '{{ mso_tenant | default("ansible_test") }}'
+    frontend_ip: "3.3.3.3"
+    device: '{{ mso_tenant | default("ansible_test") }}_other'
+    security_policy: default
+    # ssl_certificates: []
+    rules:
+      - name: default
+        priority: 0
+        # action:
+        #   - Forward To EPG1
+        # condition:
+        #   - Request otherwise not routed
+        action_type: forward
+        content_type: text_plain
+        port: 80
+        protocol: udp
+        provider_epg_ref:
+          anp_name: AP1
+          epg_name: EPG1
+
+        url_type: original
+        redirect_protocol: inherit
+        redirect_code: permanently_moved
+        health_check:
+          port: 80
+          protocol: tcp
+          interval: 5
+          unhealthy_threshold: 2
+          use_host_from_rule: false # "no"(unchecked) - host should be specified in the rule
+          success_code: 200-399
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Update listener - nlb_li_ans_udp - health_check properties
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract2"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+    name: nlb_li_ans_udp
+    listener_port: 80
+    listener_protocol: udp
+    tenant: '{{ mso_tenant | default("ansible_test") }}'
+    frontend_ip: "3.3.3.3"
+    device: '{{ mso_tenant | default("ansible_test") }}_other'
+    security_policy: default
+    # ssl_certificates: []
+    rules:
+      - name: default
+        priority: 0
+        # action:
+        #   - Forward To EPG1
+        # condition:
+        #   - Request otherwise not routed
+        action_type: forward
+        content_type: text_plain
+        port: 80
+        protocol: udp
+        provider_epg_ref:
+          anp_name: AP1
+          epg_name: EPG1
+
+        url_type: original
+        redirect_protocol: inherit
+        redirect_code: permanently_moved
+        health_check:
+          port: 80
+          protocol: tcp
+          interval: 10
+          unhealthy_threshold: 4
+          use_host_from_rule: true # "no"(unchecked) - host should be specified in the rule
+          host: "1.1.1.1"
+          success_code: 200-299
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Query an listener - nlb_li_ans_udp
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract2"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+    name: nlb_li_ans_udp
+    listener_port: 80
+    listener_protocol: udp
+    tenant: '{{ mso_tenant | default("ansible_test") }}'
+    frontend_ip: "3.3.3.3"
+    device: '{{ mso_tenant | default("ansible_test") }}_other'
+    security_policy: default
+    state: query
+
+- name: Add listener - nlb_li_ans_tcp
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract2"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+
+    name: nlb_li_ans_tcp
+    listener_port: 80
+    listener_protocol: tcp
+    frontend_ip: "3.3.3.3"
+    tenant: '{{ mso_tenant | default("ansible_test") }}'
+    device: '{{ mso_tenant | default("ansible_test") }}_other'
+    security_policy: default
+    # ssl_certificates: []
+    rules:
+      - name: default
+        priority: 0
+        # action:
+        #   - Forward To EPG1
+        # condition:
+        #   - Request otherwise not routed
+        action_type: forward
+        content_type: text_plain
+        port: 80
+        protocol: tcp
+        provider_epg_ref: # "/schemas/65d6b44fa88f0a41485fd7b5/templates/T1/anps/AP1/epgs/EPG1"
+          anp_name: AP1
+          epg_name: EPG1
+        url_type: original
+        redirect_protocol: inherit
+        redirect_code: permanently_moved
+        health_check:
+          port: 80
+          protocol: tcp
+          interval: 5
+          unhealthy_threshold: 2
+          use_host_from_rule: false # "no"(unchecked) - host should be specified in the rule
+          success_code: 200-399
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Add listener - aplb_li_ans_https
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract1"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+
+    name: aplb_li_ans_https
+    listener_port: 443
+    listener_protocol: https
+    security_policy: default
+    ssl_certificates:
+      - name: ansible_tenant_xyz_keyring
+        certificate_store: default
+        # tDn: uni/tn-sab_ansible_test_123/certstore
+        # default: true
+    rules:
+      - name: default
+        priority: 1
+        # action:
+        #   - Forward To EPG1
+        action_type: forward
+        content_type: text_plain
+        port: 80
+        protocol: http
+        provider_epg_ref: # "/schemas/65d6b44fa88f0a41485fd7b5/templates/T1/anps/AP1/epgs/EPG1"
+          anp_name: AP1
+          epg_name: EPG1
+        url_type: original
+        response_code: "200"
+        redirect_protocol: inherit
+        redirect_port: 443
+        redirect_code: permanently_moved
+        health_check:
+          port: 80
+          protocol: http
+          path: "/"
+          interval: 30
+          timeout: 30
+          unhealthy_threshold: 3
+          use_host_from_rule: true # "yes" - host should be empty in the rule
+          success_code: "200"
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Add listener - aplb_li_ans_http
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract1"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+
+    listener: aplb_li_ans_http
+    listener_port: 80
+    listener_protocol: http
+    security_policy: default
+    rules:
+      - name: rule_2
+        priority: 2
+        host: rule_host
+        path: rule_path
+        # action:
+        #   - Forward To EPG1
+        # condition:
+        #   - Host is rule_host
+        #   - Path is rule_path
+        action_type: forward
+        content_type: text_plain
+        port: 443
+        protocol: https
+        provider_epg_ref: # "/schemas/65d6b44fa88f0a41485fd7b5/templates/T1/anps/AP1/epgs/EPG1"
+          anp_name: AP1
+          epg_name: EPG1
+        url_type: original
+        response_code: "200"
+        redirect_protocol: http
+        redirect_port: 80
+        redirect_code: permanently_moved
+        health_check:
+          port: 443
+          protocol: https
+          path: "/"
+          interval: 30
+          timeout: 30
+          unhealthy_threshold: 3
+          host: use_host_from_rule
+          use_host_from_rule: false # "no"(unchecked) - host should be specified in the rule
+          success_code: "200"
+        target_ip_type: unspecified
+
+      - name: default
+        priority: 1
+        # action:
+        #   - Redirect To Original
+        action_type: redirect
+        content_type: text_plain
+        port: 80
+        protocol: https
+        url_type: original
+        response_code: "200"
+        redirect_protocol: inherit
+        redirect_port: 443
+        redirect_code: permanently_moved
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Query all listeners under the Contract1 - service_node_index - 0
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract1"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+    state: query
+  ignore_errors: true
+
+# Need to copy the above copy of listener_tasks
+# # ------------------------------------------------
+# mso.fail_json(msg="The Site Contract Service Graph Listener is not supported for the on-premise site.")
+
+- name: Negative test - add listener - nlb_li_ans_tcp - url_type is custom
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract2"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+
+    name: nlb_li_ans_tcp
+    listener_port: 80
+    listener_protocol: tcp
+    frontend_ip: "3.3.3.3"
+    tenant: '{{ mso_tenant | default("ansible_test") }}'
+    device: '{{ mso_tenant | default("ansible_test") }}_other'
+    security_policy: default
+    # ssl_certificates: []
+    rules:
+      - name: default
+        priority: 0
+        # action:
+        #   - Forward To EPG1
+        # condition:
+        #   - Request otherwise not routed
+        action_type: forward
+        content_type: text_plain
+        port: 80
+        protocol: tcp
+        provider_epg_ref: # "/schemas/65d6b44fa88f0a41485fd7b5/templates/T1/anps/AP1/epgs/EPG1"
+          anp_name: AP1
+          epg_name: EPG1
+        url_type: custom
+        redirect_protocol: inherit
+        redirect_code: permanently_moved
+        health_check:
+          port: 80
+          protocol: https
+          # interval: 5
+          # unhealthy_threshold: 2
+          use_host_from_rule: false # "no"(unchecked) - host should be specified in the rule
+          success_code: 200-399
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Negative test - add listener - nlb_li_ans_tcp
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract2"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+
+    name: nlb_li_ans_tcp
+    listener_port: 80
+    listener_protocol: tcp
+    frontend_ip: "3.3.3.3"
+    tenant: '{{ mso_tenant | default("ansible_test") }}'
+    device: '{{ mso_tenant | default("ansible_test") }}_other'
+    security_policy: default
+    # ssl_certificates: []
+    rules:
+      - name: default
+        priority: 0
+        # action:
+        #   - Forward To EPG1
+        # condition:
+        #   - Request otherwise not routed
+        action_type: forward
+        content_type: text_plain
+        port: 80
+        protocol: tcp
+        provider_epg_ref: # "/schemas/65d6b44fa88f0a41485fd7b5/templates/T1/anps/AP1/epgs/EPG1"
+          anp_name: AP1
+          epg_name: EPG1
+        url_type: original
+        redirect_protocol: inherit
+        redirect_code: permanently_moved
+        health_check:
+          port: 80
+          protocol: https
+          # interval: 5
+          # unhealthy_threshold: 2
+          use_host_from_rule: false # "no"(unchecked) - host should be specified in the rule
+          success_code: 200-399
+        target_ip_type: unspecified
+  ignore_errors: true
+
+# Add listener without rules
+- name: Negative test - add listener - Contract4 - tlb_li_ans_http
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract4"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+    listener: tlb_li_ans_http
+    listener_port: 80
+    listener_protocol: http
+    security_policy: default
+  ignore_errors: true
+
+# mso.fail_json(msg="The deviceConfiguration object is not configured for the service_node_index: {0}.".format(service_node_index))
+
+- name: Negative test - add listener - Contract4 - tlb_li_ans_http
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract4"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+
+    listener: tlb_li_ans_http
+    listener_port: 80
+    listener_protocol: http
+    security_policy: default
+    rules:
+      - name: rule_2
+        priority: 2
+        host: rule_host
+        path: rule_path
+        action_type: forward
+        content_type: text_plain
+        port: 443
+        protocol: http
+        provider_epg_ref: # "/schemas/65d6b44fa88f0a41485fd7b5/templates/T1/anps/AP1/epgs/EPG1"
+          anp_name: AP1
+          epg_name: EPG1
+        url_type: original
+        response_code: "200"
+        redirect_protocol: http
+        redirect_port: 80
+        redirect_code: permanently_moved
+        health_check:
+          port: 443
+          protocol: http
+          path: "/"
+          interval: 30
+          timeout: 30
+          unhealthy_threshold: 3
+          host: use_host_from_rule
+          use_host_from_rule: false # "no"(unchecked) - host should be specified in the rule
+          success_code: "200"
+        target_ip_type: unspecified
+  ignore_errors: true
+
+# mso.fail_json(msg="The service_node_index: {0} is out of range.".format(service_node_index))
+
+- name: Negative test - add listener - nt_aplb_li_ans_http
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract1"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 10
+
+    listener: nt_aplb_li_ans_http
+    listener_port: 80
+    listener_protocol: http
+    security_policy: default
+    rules:
+      - name: rule_2
+        priority: 2
+        host: rule_host
+        path: rule_path
+        action_type: forward
+        content_type: text_plain
+        port: 443
+        protocol: http
+        provider_epg_ref: # "/schemas/65d6b44fa88f0a41485fd7b5/templates/T1/anps/AP1/epgs/EPG1"
+          anp_name: AP1
+          epg_name: EPG1
+        url_type: original
+        response_code: "200"
+        redirect_protocol: http
+        redirect_port: 80
+        redirect_code: permanently_moved
+        health_check:
+          port: 443
+          protocol: http
+          path: "/"
+          interval: 30
+          timeout: 30
+          unhealthy_threshold: 3
+          host: use_host_from_rule
+          use_host_from_rule: false # "no"(unchecked) - host should be specified in the rule
+          success_code: "200"
+        target_ip_type: unspecified
+  ignore_errors: true
+
+# mso.fail_json(msg="When the 'listener_protocol' is 'http', the rule 'protocol' must be 'https'")
+
+- name: Negative test - add listener - nt_aplb_li_ans_http
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract1"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+
+    listener: nt_aplb_li_ans_http
+    listener_port: 80
+    listener_protocol: http
+    security_policy: default
+    rules:
+      - name: rule_2
+        priority: 2
+        host: rule_host
+        path: rule_path
+        action_type: forward
+        content_type: text_plain
+        port: 443
+        protocol: http
+        provider_epg_ref: # "/schemas/65d6b44fa88f0a41485fd7b5/templates/T1/anps/AP1/epgs/EPG1"
+          anp_name: AP1
+          epg_name: EPG1
+        url_type: original
+        response_code: "200"
+        redirect_protocol: http
+        redirect_port: 80
+        redirect_code: permanently_moved
+        health_check:
+          port: 443
+          protocol: http
+          path: "/"
+          interval: 30
+          timeout: 30
+          unhealthy_threshold: 3
+          host: use_host_from_rule
+          use_host_from_rule: false # "no"(unchecked) - host should be specified in the rule
+          success_code: "200"
+        target_ip_type: unspecified
+  ignore_errors: true
+
+# mso.fail_json(msg="When the 'listener_protocol' is 'https', the rule 'protocol' must be 'http'")
+
+- name: Negative test - add listener - nt_aplb_li_ans_https
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract1"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+    listener: nt_aplb_li_ans_https
+    listener_port: 80
+    listener_protocol: https
+    security_policy: default
+    ssl_certificates:
+      - name: ansible_tenant_xyz_keyring
+        certificate_store: default
+        # tDn: uni/tn-sab_ansible_test_123/certstore
+        # default: true
+
+    rules:
+      - name: rule_2
+        priority: 2
+        host: rule_host
+        path: rule_path
+        action_type: forward
+        content_type: text_plain
+        port: 443
+        protocol: https
+        provider_epg_ref: # "/schemas/65d6b44fa88f0a41485fd7b5/templates/T1/anps/AP1/epgs/EPG1"
+          anp_name: AP1
+          epg_name: EPG1
+        url_type: original
+        response_code: "200"
+        redirect_protocol: http
+        redirect_port: 80
+        redirect_code: permanently_moved
+        health_check:
+          port: 443
+          protocol: http
+          path: "/"
+          interval: 30
+          timeout: 30
+          unhealthy_threshold: 3
+          host: use_host_from_rule
+          use_host_from_rule: false # "no"(unchecked) - host should be specified in the rule
+          success_code: "200"
+        target_ip_type: unspecified
+  ignore_errors: true
+
+# mso.fail_json(
+#     msg="When the 'listener_protocol' is http, the health_check protocol must be https at the object position: {0} and the object name: {1}".format(
+#         position, rule.get("name")
+#     )
+# )
+
+- name: Negative test - add listener - nt_aplb_li_ans_http
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract1"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+
+    listener: nt_aplb_li_ans_http
+    listener_port: 80
+    listener_protocol: http
+    security_policy: default
+    rules:
+      - name: rule_2
+        priority: 2
+        host: rule_host
+        path: rule_path
+        action_type: forward
+        content_type: text_plain
+        port: 443
+        protocol: https
+        provider_epg_ref: # "/schemas/65d6b44fa88f0a41485fd7b5/templates/T1/anps/AP1/epgs/EPG1"
+          anp_name: AP1
+          epg_name: EPG1
+        url_type: original
+        response_code: "200"
+        redirect_protocol: http
+        redirect_port: 80
+        redirect_code: permanently_moved
+        health_check:
+          port: 443
+          protocol: http
+          path: "/"
+          interval: 30
+          timeout: 30
+          unhealthy_threshold: 3
+          host: use_host_from_rule
+          use_host_from_rule: false # "no"(unchecked) - host should be specified in the rule
+          success_code: "200"
+        target_ip_type: unspecified
+  ignore_errors: true
+
+# mso.fail_json(
+#     msg="When the 'listener_protocol' is https, the health_check protocol must be http at the object position: {0} and the object name: {1}".format(
+#         position, rule.get("name")
+#     )
+# )
+
+- name: Negative test - add listener - nt_aplb_li_ans_https
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract1"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: '{{ mso_site | default("ansible_test") }}'
+    service_node_index: 0
+
+    listener: nt_aplb_li_ans_https
+    listener_port: 80
+    listener_protocol: https
+    security_policy: default
+    ssl_certificates:
+      - name: ansible_tenant_xyz_keyring
+        certificate_store: default
+        # tDn: uni/tn-sab_ansible_test_123/certstore
+        # default: true
+
+    rules:
+      - name: rule_2
+        priority: 2
+        host: rule_host
+        path: rule_path
+        action_type: forward
+        content_type: text_plain
+        port: 443
+        protocol: http
+        provider_epg_ref: # "/schemas/65d6b44fa88f0a41485fd7b5/templates/T1/anps/AP1/epgs/EPG1"
+          anp_name: AP1
+          epg_name: EPG1
+        url_type: original
+        response_code: "200"
+        redirect_protocol: http
+        redirect_port: 80
+        redirect_code: permanently_moved
+        health_check:
+          port: 443
+          protocol: https
+          path: "/"
+          interval: 30
+          timeout: 30
+          unhealthy_threshold: 3
+          host: use_host_from_rule
+          use_host_from_rule: false # "no"(unchecked) - host should be specified in the rule
+          success_code: "200"
+        target_ip_type: unspecified
+  ignore_errors: true
+
+- name: Negative test - query all listeners with the non-cloud site
+  cisco.mso.mso_schema_site_contract_service_graph_listener:
+    <<: *mso_info
+    contract: "Contract2"
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: ansible_template1
+    site: "ansible_test"
+    service_node_index: 0
+    state: query

@@ -1,0 +1,448 @@
+
+    # ---------- below conditions are required ---------
+    # if device is None and tenant is None and state == "present" and frontend_ip is not None:
+    #     module.fail_json(msg="The 'device' and 'tenant' names are required when 'state' is present and 'frontend_ip' is configured")
+    # # when the state is present and frontend_ip is configured
+    # elif device is None and state == "present" and frontend_ip is not None:
+    #     module.fail_json(msg="The 'device' name is required when 'state' is present and 'frontend_ip' is configured")
+    # # when the state is present and frontend_ip is configured and tenent is none
+    # elif tenant is None and state == "present" and frontend_ip is not None:
+    #     module.fail_json(msg="The 'tenant' name is required when 'state' is present and 'frontend_ip' is configured")
+
+    # # when the state is present and frontend_ip, ssl_certificates is configured
+    # if tenant is None and state == "present" and ssl_certificates is not None:
+    #     module.fail_json(msg="The 'tenant' name is required when 'state' is present and 'ssl_certificates' is configured")
+    # ---------- above conditions are required ---------
+
+
+
+
+# """
+# "contracts":[
+# {
+# "contractRef": "/schemas/655f4184a88f0a4148543142/templates/T2/contracts/T2_C1",
+# "serviceGraphRelationship":{
+# "serviceGraphRef": "/schemas/655f4184a88f0a4148543142/templates/T2/serviceGraphs/T2_SG1",
+# "serviceNodesRelationship":[
+# {
+# "serviceNodeRef": "/schemas/655f4184a88f0a4148543142/templates/T2/serviceGraphs/T2_SG1/serviceNodes/node1"
+# }
+# ]
+# }
+# },
+# {
+# "contractRef": "/schemas/655f4184a88f0a4148543142/templates/T2/contracts/T2_C2",
+# "serviceGraphRelationship":{
+# "serviceGraphRef": "/schemas/655f4184a88f0a4148543142/templates/T2/serviceGraphs/T2_SG2",
+# "serviceNodesRelationship":[
+# {
+# "serviceNodeRef": "/schemas/655f4184a88f0a4148543142/templates/T2/serviceGraphs/T2_SG2/serviceNodes/node1"
+# }
+# ]
+# }
+# }
+# ],
+# """
+
+# ------------- unwanted code ---------
+
+
+#     mso.fail_json(msg="listeners: {0}".format(listeners))
+
+# # --------- need to check ----------
+
+# # # Get site id
+# # site_id = mso.lookup_site(site)
+# # mso_schema.set_site(template, site)
+# # mso_schema.set_site_contract(contract, False)
+
+# if contract and mso_schema.schema_objects["site_contract"] is not None:
+#     site_contract_service_graph = mso_schema.schema_objects["site_contract"].details.get("serviceGraphRelationship")
+#     if site_contract_service_graph and service_graph:
+#         site_contract_service_graph_name = site_contract_service_graph.get("serviceGraphRef").split("/")[-1]
+#         if site_contract_service_graph_name == service_graph:
+#             mso.existing = site_contract_service_graph
+#         else:
+#             mso.fail_json(msg="The service graph: {0} does not associated with the site contract: {1}.".format(service_graph, contract))
+#     elif site_contract_service_graph and service_graph is None:
+#         mso.existing = site_contract_service_graph
+# elif contract is not None and mso_schema.schema_objects["site_contract"] is None:
+#     mso.fail_json(msg="The site contract: {0} does not exist.".format(contract))
+# elif contract is None and mso_schema.schema_objects["site"].details.get("contracts"):
+#     mso.existing = [
+#         contract.get("serviceGraphRelationship")
+#         for contract in mso_schema.schema_objects["site"].details.get("contracts")
+#         if contract.get("serviceGraphRelationship")
+#     ]
+
+# if state == "query":
+#     mso.exit_json()
+
+# # site_contract_service_graph_path = "/sites/{0}-{1}/contracts/{2}/serviceGraphRelationship".format(site_id, service_graph_reference_template, contract)
+
+
+# --------------
+# ---------- new code ends here ----------
+
+
+# Sample Payload
+
+# {
+#    [
+#       {
+#          "op":"add",
+#          "path":"/sites/653a267d5814510d6a51cb23-T1/contracts/C1/serviceGraphRelationship/serviceNodesRelationship/0/deviceConfiguration/cloudLoadBalancer/listeners/-",
+#          "value":{
+#             "certificates":[
+#                {
+#                   "default":true,
+#                   "name":"Sab_KeyRing",
+#                   "store":"default",
+#                   "tDn":"uni/tn-sab_test_tenant_azure/certstore"
+#                }
+#             ],
+#             "name":"NL2_Https",
+#             "nlbDevIp":{
+
+#             },
+#             "port":443,
+#             "protocol":"https",
+#             "rules":[
+#                {
+#                   "actionType":"redirect",
+#                   "contentType":"textPlain",
+#                   "healthCheck":{
+
+#                   },
+#                   "index":1,
+#                   "name":"default",
+#                   "port":80,
+#                   "protocol":"http",
+#                   "redirectCode":"permMoved",
+#                   "redirectPort":80,
+#                   "redirectProtocol":"http",
+#                   "responseCode":"200",
+#                   "targetIpType":"unspecified",
+#                   "urlType":"original"
+#                }
+#             ],
+#             "secPolicy":"default"
+#          }
+#       }
+#    ]
+# }
+
+#   Schema: map[string]*schema.Schema{
+#       "schema_id": &schema.Schema{
+#           Type:         schema.TypeString,
+#           Required:     true,
+#           ForceNew:     true,
+#       },
+#       "template_name": &schema.Schema{
+#           Type:         schema.TypeString,
+#           Required:     true,
+#           ForceNew:     true,
+#       },
+#       "contract_name": &schema.Schema{
+#           Type:         schema.TypeString,
+#           Required:     true,
+#           ForceNew:     true,
+#       },
+#       "site_id": &schema.Schema{
+#           Type:         schema.TypeString,
+#           ForceNew:     true,
+#           Required:     true,
+#       },
+#       "service_node_index": &schema.Schema{
+#           Type:     schema.TypeInt,
+#           ForceNew: true,
+#           Required: true,
+#       },
+#       "listener_name": &schema.Schema{
+#           Type:         schema.TypeString,
+#           ForceNew:     true,
+#           Required:     true,
+#       },
+#       "protocol": &schema.Schema{
+#           Type:         schema.TypeString,
+#           Required:     true,
+#           ValidateFunc: validation.StringInSlice(listenerProtocols, false),
+#       },
+#       "port": &schema.Schema{
+#           Type:     schema.TypeInt,
+#           Required: true,
+#       },
+#       "security_policy": &schema.Schema{
+#           Type:         schema.TypeString,
+#           Optional:     true,
+#           Computed:     true,
+#           ValidateFunc: validation.StringInSlice(listenerSecurityPolicyKeys, false),
+#       },
+
+# "frontend_ip": &schema.Schema{
+#           Type:     schema.TypeString,
+#           Optional: true,
+#           Computed: true,
+#       },
+
+#   },
+#       // NOTE: rules is a required attribute but to utilize the ResourceDiff functionality marked as optional and computed
+#       "rules": &schema.Schema{
+#           Type:     schema.TypeSet,
+
+#                   "name": &schema.Schema{
+#                       Type:         schema.TypeString,
+#                       Required:     true,
+#                   },
+#                   "floating_ip": &schema.Schema{
+#                       Type:     schema.TypeString,
+#                       Optional: true,
+#                       Computed: true,
+#                   },
+#                   "priority": &schema.Schema{
+#                       Type:     schema.TypeInt,
+#                       Required: true,
+#                   },
+#                   "host": &schema.Schema{
+#                       Type:     schema.TypeString,
+#                       Optional: true,
+#                       Computed: true,
+#                   },
+#                   "path": &schema.Schema{
+#                       Type:     schema.TypeString,
+#                       Optional: true,
+#                       Computed: true,
+#                   },
+#                   "action": &schema.Schema{
+#                       Type:     schema.TypeString,
+#                       Optional: true,
+#                       Computed: true,
+#                   },
+#                   // TODO: Should be uncommented once condition is configured through UI
+#                   // "condition": &schema.Schema{
+#                   //  Type:     schema.TypeString,
+#                   //  Optional: true,
+#                   //  Computed: true,
+#                   // },
+#                   "action_type": &schema.Schema{
+#                       Type:         schema.TypeString,
+#                       Required:     true,
+#                       ValidateFunc: validation.StringInSlice(listenerActionTypeKeys, false),
+#                   },
+#                   "content_type": &schema.Schema{
+#                       Type:         schema.TypeString,
+#                       Optional:     true,
+#                       Computed:     true,
+#                       ValidateFunc: validation.StringInSlice(listenerContentTypeKeys, false),
+#                   },
+#                   "port": &schema.Schema{
+#                       Type:     schema.TypeInt,
+#                       Required: true,
+#                   },
+#                   "protocol": &schema.Schema{
+#                       Type:         schema.TypeString,
+#                       Required:     true,
+#                       ValidateFunc: validation.StringInSlice(listenerProtocols, false),
+#                   },
+
+#                   "provider_epg_ref": { // Only one object allowed
+#                       Type:     schema.TypeSet,
+#                       Optional: true,
+#                       Computed: true,
+#                       MaxItems: 1,
+#                       Elem: &schema.Resource{
+#                           Schema: map[string]*schema.Schema{
+#                               "schema_id": &schema.Schema{
+#                                   Type:     schema.TypeString,
+#                                   Optional: true,
+#                                   Computed: true,
+#                               },
+#                               "template_name": &schema.Schema{
+#                                   Type:     schema.TypeString,
+#                                   Optional: true,
+#                                   Computed: true,
+#                               },
+#                               "anp_name": &schema.Schema{
+#                                   Type:         schema.TypeString,
+#                                   Required:     true,
+#                               },
+#                               "epg_name": &schema.Schema{
+#                                   Type:         schema.TypeString,
+#                                   Required:     true,
+#                               },
+#                           },
+#                       },
+#                   },
+#                   "url_type": &schema.Schema{
+#                       Type:     schema.TypeString,
+#                       Optional: true,
+#                       Computed: true,
+#                       ValidateFunc: validation.StringInSlice([]string{
+#                           "original",
+#                           "custom",
+#                       }, false),
+#                   },
+#                   "custom_url": &schema.Schema{
+#                       Type:     schema.TypeString,
+#                       Optional: true,
+#                       Computed: true,
+#                   },
+#                   "redirect_host_name": &schema.Schema{
+#                       Type:     schema.TypeString,
+#                       Optional: true,
+#                       Computed: true,
+#                   },
+#                   "redirect_path": &schema.Schema{
+#                       Type:     schema.TypeString,
+#                       Optional: true,
+#                       Computed: true,
+#                   },
+#                   "redirect_query": &schema.Schema{
+#                       Type:     schema.TypeString,
+#                       Optional: true,
+#                       Computed: true,
+#                   },
+#                   "response_code": &schema.Schema{
+#                       Type:     schema.TypeString,
+#                       Optional: true,
+#                       Computed: true,
+#                   },
+#                   "response_body": &schema.Schema{
+#                       Type:     schema.TypeString,
+#                       Optional: true,
+#                       Computed: true,
+#                   },
+#                   "redirect_protocol": &schema.Schema{
+#                       Type:         schema.TypeString,
+#                       Optional:     true,
+#                       Computed:     true,
+#                       ValidateFunc: validation.StringInSlice(listenerProtocols, false),
+#                   },
+#                   "redirect_port": &schema.Schema{
+#                       Type:     schema.TypeInt,
+#                       Optional: true,
+#                       Computed: true,
+#                   },
+#                   "redirect_code": &schema.Schema{
+#                       Type:         schema.TypeString,
+#                       Optional:     true,
+#                       Computed:     true,
+#                       ValidateFunc: validation.StringInSlice(listenerRedirectCodeKeys, false),
+#                   },
+
+#                   "health_check": &schema.Schema{ // Only one object allowed
+
+#                       Elem: &schema.Resource{
+#                           Schema: map[string]*schema.Schema{
+#                               "port": &schema.Schema{
+#                                   Type:     schema.TypeInt,
+#                                   Optional: true,
+#                                   Computed: true,
+#                               },
+#                               "protocol": &schema.Schema{
+#                                   Type:         schema.TypeString,
+#                                   Optional:     true,
+#                                   Computed:     true,
+#                                   ValidateFunc: validation.StringInSlice(listenerProtocols, false),
+#                               },
+#                               "path": &schema.Schema{
+#                                   Type:     schema.TypeString,
+#                                   Optional: true,
+#                                   Computed: true,
+#                               },
+#                               "interval": &schema.Schema{
+#                                   Type:     schema.TypeInt,
+#                                   Optional: true,
+#                                   Computed: true,
+#                               },
+
+#                               "timeout": &schema.Schema{
+#                                   Type:     schema.TypeInt,
+#                                   Optional: true,
+#                                   Computed: true,
+#                               },
+#                               "unhealthy_threshold": &schema.Schema{
+#                                   Type:     schema.TypeInt,
+#                                   Optional: true,
+#                                   Computed: true,
+#                               },
+#                               "use_host_from_rule": &schema.Schema{ // By default the TypeBool returns false
+#                                   Type:     schema.TypeBool,
+#                                   Optional: true,
+#                                   Computed: true,
+#                               },
+#                               "success_code": &schema.Schema{
+#                                   Type:     schema.TypeString,
+#                                   Optional: true,
+#                                   Computed: true,
+#                               },
+#                               "host": &schema.Schema{
+#                                   Type:     schema.TypeString,
+#                                   Optional: true,
+#                                   Computed: true,
+#                               },
+#                           },
+#                       },
+#                   },
+#                   "target_ip_type": &schema.Schema{
+#                       Type:     schema.TypeString,
+#                       Optional: true,
+#                       Computed: true,
+#                       ValidateFunc: validation.StringInSlice([]string{
+#                           "unspecified",
+#                           "primary",
+#                           "secondary",
+#                       }, false),
+#                   },
+#               },
+#           },
+#       },
+
+
+# if listenerProtocol.(string) == "https" {
+#   if newSecurityPolicy.(string) == "" || len(newSSLCertificates.(*schema.Set).List()) == 0 {
+#       return fmt.Errorf("When the listener Protocol is https, the security_policy and ssl_certificates attributes must be set")
+
+
+# if len(newRulesList) == 0 {
+#   return fmt.Errorf("Rules cannot be empty, minimum one item is required to perform 'create/update' operation")
+
+#   // When the rule action_type is "redirect"
+#   if newRuleMap["action_type"].(string) == "redirect" {
+#       if newRedirectProtocol == "" || newRedirectPort == 0 || newUrlType == "" || newResponseCode == "" {
+#           return fmt.Errorf("When the 'action_type' is 'redirect', the 'redirect_protocol', 'redirect_port', 'url_type', 'redirect_code' attributes must be set")
+
+#   // When the rule action_type is "forward"
+#   if newRuleMap["action_type"].(string) == "forward" {
+#       if newRuleProtocol == "" || newRulePort == 0 || len(newHealthCheck) == 0 {
+#           return fmt.Errorf("When the 'action_type' is 'forward', the 'protocol', 'port', 'health_check' attributes must be set")
+
+#   // When the rule url_type is "custom"
+#   if newRuleMap["url_type"].(string) == "custom" {
+#       if newRuleRedirectHostName == "" || newRuleRedirectPath == "" || newRuleRedirectQuery == "" || newRuleResponseCode == "" {
+#           return fmt.Errorf("When the 'url_type' is 'custom', the 'redirect_host_name', 'redirect_path', 'redirect_query', 'response_code' attributes must be set")
+
+#   // When the Health Checks protocol is "http/https"
+#   if newHealthCheckProtocol == "http" || newHealthCheckProtocol == "https" {
+#       if newHealthCheckPort == 0 || newHealthCheckPath == "" || newHealthCheckUnhealthyThreshold == 0 || newHealthCheckTimeout == 0 || newHealthCheckInterval == 0 || newHealthCheckSuccessCode == "" {
+#           return fmt.Errorf("When the 'health_check' protocol is 'http/https', the 'port', 'path', 'unhealthy_threshold', 'timeout', 'interval', 'success_code' attributes must be set")
+
+
+#       // when the listener protocol is "http/https", the Health Checks protocol is "http/https" and use_host_from_rule is true then the host attribute must be set
+#       if listenerProtocol.(string) == "http" || listenerProtocol.(string) == "https" {
+#           if !newHealthCheckUseHostFromRule && newHealthCheckHost == "" {
+#               return fmt.Errorf("When the 'health_check' protocol is 'http/https', the 'use_host_from_rule' and 'host' attributes must be set")
+
+
+#   // when the listener protocol is "tcp/udp" Provider EPG is required
+#   if listenerProtocol.(string) == "tcp" || listenerProtocol.(string) == "udp" {
+#       if len(newProviderEPGRefList) == 0 || len(newRuleMap["health_check"].(*schema.Set).List()) == 0 {
+#           return fmt.Errorf("When the 'listener_protocol' is 'tcp/udp', the 'provider_epg_ref', 'health_check' attributes must be set")
+#       // When the listener protocol is "tcp/udp" and the Health Checks protocol is "tcp"
+#       if newHealthCheckProtocol == "tcp" {
+#           if newHealthCheckPort == 0 || newHealthCheckUnhealthyThreshold == 0 || newHealthCheckInterval == 0 {
+#               return fmt.Errorf("When the 'health_check' protocol is 'tcp', the 'port', 'unhealthy_threshold', 'interval' attributes must be set")
+
+#       } else if newHealthCheckProtocol == "http" || newHealthCheckProtocol == "https" {
+#           if newHealthCheckPort == 0 || newHealthCheckPath == "" || newHealthCheckUnhealthyThreshold == 0 || newHealthCheckInterval == 0 {
+#               return fmt.Errorf("When the 'health_check' protocol is 'tcp', the 'port', 'newHealthCheckPath', 'unhealthy_threshold', 'interval' attributes must be set")

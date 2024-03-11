@@ -1,0 +1,768 @@
+
+schema id: 65debd04b4bb6f5a86ce0283
+
+https://173.36.219.30/mso/api/v1/schemas/65debd04b4bb6f5a86ce0283?validate=false
+
+site id azure_ans_test_2: 65deb9cebcb66752c31ba316
+
+
+Payload to attach Site contract SG:
+--------
+[
+   {
+      "op":"add",
+      "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract1/serviceGraphRelationship",
+      "value":{
+         "serviceGraphRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG1",
+         "serviceNodesRelationship":[
+            {
+               "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG1/serviceNodes/node1",
+               "deviceConfiguration":{
+                  "cloudLoadBalancer":{
+                     "listeners":[
+                        {
+                           "protocol":"tcp",
+                           "name":"nlb_li_tcp",
+                           "nlbDevIp":null,
+                           "port":80,
+                           "rules":[
+                              {
+                                 "port":78,
+                                 "providerEpgRef":"",
+                                 "name":"default",
+                                 "healthCheck":{
+                                    "port":78,
+                                    "timeout":0,
+                                    "path":null,
+                                    "interval":5,
+                                    "unhealthyThreshold":2,
+                                    "host":null,
+                                    "successCode":null,
+                                    "useHostFromRule":"no",
+                                    "protocol":"tcp"
+                                 },
+                                 "actionType":"forward",
+                                 "index":1,
+                                 "action":[
+                                    "Forward To "
+                                 ],
+                                 "protocol":"tcp",
+                                 "condition":[
+                                    
+                                 ]
+                              }
+                           ],
+                           "secPolicy":null,
+                           "certificates":[
+                              
+                           ]
+                        }
+                     ]
+                  }
+               }
+            },
+            {
+               "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG1/serviceNodes/node2",
+               "deviceConfiguration":{
+                  "cloudLoadBalancer":{
+                     "listeners":[
+                        {
+                           "protocol":"http",
+                           "name":"aplb_li_http",
+                           "port":80,
+                           "rules":[
+                              {
+                                 "port":80,
+                                 "responseBody":null,
+                                 "path":null,
+                                 "host":null,
+                                 "providerEpgRef":null,
+                                 "urlType":"original",
+                                 "redirectCode":"permMoved",
+                                 "name":"default",
+                                 "healthCheck":null,
+                                 "responseCode":"200",
+                                 "actionType":"redirect",
+                                 "index":1,
+                                 "contentType":null,
+                                 "redirectProtocol":"https",
+                                 "action":[
+                                    "Redirect To original"
+                                 ],
+                                 "protocol":"http",
+                                 "condition":[
+                                    
+                                 ],
+                                 "redirectPort":80
+                              }
+                           ],
+                           "secPolicy":null,
+                           "certificates":[
+                              
+                           ]
+                        }
+                     ]
+                  }
+               }
+            }
+         ]
+      }
+   }
+]
+
+
+--------
+
+
+Payload to attach Site contract SG Listeners:
+--------
+
+
+"contracts":[
+{
+    "contractRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/contracts/ContracTemplate1",
+    "serviceGraphRelationship":{
+        "serviceGraphRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG1",
+        "serviceNodesRelationship":[
+            {
+            "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG1/serviceNodes/node1",
+            "deviceConfiguration":{
+                "cloudLoadBalancer":{
+                    "listeners":[
+                        {
+                        "protocol":"tcp",
+                        "name":"nlb_li_tcp",
+                        "nlbDevIp":null,
+                        "port":80,
+                        "rules":[
+                            {
+                                "port":78,
+                                "providerEpgRef":"",
+                                "name":"default",
+                                "healthCheck":{
+                                    "port":78,
+                                    "timeout":0,
+                                    "path":null,
+                                    "interval":5,
+                                    "unhealthyThreshold":2,
+                                    "host":null,
+                                    "successCode":null,
+                                    "useHostFromRule":"no",
+                                    "protocol":"tcp"
+                                },
+                                "actionType":"forward",
+                                "index":1,
+                                "action":[
+                                    "Forward To "
+                                ],
+                                "protocol":"tcp",
+                                "condition":[
+                                    
+                                ]
+                            }
+                        ],
+                        "secPolicy":null,
+                        "certificates":[
+                            
+                        ]
+                        }
+                    ]
+                }
+            }
+            },
+            {
+            "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG1/serviceNodes/node2",
+            "deviceConfiguration":{
+                "cloudLoadBalancer":{
+                    "listeners":[
+                        {
+                        "protocol":"http",
+                        "name":"aplb_li_http",
+                        "port":80,
+                        "rules":[
+                            {
+                                "port":80,
+                                "responseBody":null,
+                                "path":null,
+                                "host":null,
+                                "providerEpgRef":null,
+                                "urlType":"original",
+                                "redirectCode":"permMoved",
+                                "name":"default",
+                                "healthCheck":null,
+                                "responseCode":"200",
+                                "actionType":"redirect",
+                                "index":1,
+                                "contentType":null,
+                                "redirectProtocol":"https",
+                                "action":[
+                                    "Redirect To original"
+                                ],
+                                "protocol":"http",
+                                "condition":[
+                                    
+                                ],
+                                "redirectPort":80
+                            }
+                        ],
+                        "secPolicy":null,
+                        "certificates":[
+                            
+                        ]
+                        }
+                    ]
+                }
+            }
+            }
+        ]
+    }
+}
+]
+
+
+--------
+
+
+
+Only Listeners
+
+[
+  {
+    "op":"add",
+    "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract1/serviceGraphRelationship/serviceNodesRelationship/deviceConfiguration/cloudLoadBalancer/listeners/",
+    "value":{
+      {
+      "protocol":"http",
+      "name":"aplb_li_http1",
+      "port":80,
+      "rules":[
+      {
+      "port":80,
+      "responseBody":null,
+      "path":null,
+      "host":null,
+      "providerEpgRef":null,
+      "urlType":"original",
+      "redirectCode":"permMoved",
+      "name":"default",
+      "healthCheck":null,
+      "responseCode":"200",
+      "actionType":"redirect",
+      "index":1,
+      "contentType":null,
+      "redirectProtocol":"https",
+      "action":[
+      "Redirect To original"
+      ],
+      "protocol":"http",
+      "condition":[
+      ],
+      "redirectPort":80
+    }
+    ],
+    "secPolicy":null,
+    "certificates":[
+    ]
+  }
+  }
+  }
+]
+
+
+
+
+
+----
+Only the SG:
+
+[
+  {
+    "op":"add",
+    "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract1/serviceGraphRelationship",
+    "value":{
+      "serviceGraphRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG1",
+      "serviceNodesRelationship":[
+      ]
+    }
+  }
+]
+
+// Important topic starts here
+
+When the site contract sg is empyt like the below one
+-----------------------------------------------------
+https://173.36.219.30/mso/api/v1/schemas/65debd04b4bb6f5a86ce0283?validate=false
+
+[
+  {
+    "op":"add",
+    "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract1/serviceGraphRelationship",
+    "value":{
+      "serviceGraphRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG1",
+      "serviceNodesRelationship":[
+      ]
+    }
+  }
+]
+
+// Listeners create:
+
+Then in the listeners module, I should create the below payload for the service node index:
+      
+Initally the path should be: "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract1/serviceGraphRelationship/serviceNodesRelationship/-",
+
+and the Initial payload should be like the below one:
+
+[
+   {
+      "op":"add",
+      "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract1/serviceGraphRelationship/serviceNodesRelationship/-",
+      "value":{
+        "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG1/serviceNodes/node1",
+         "deviceConfiguration":{
+            "cloudLoadBalancer":{
+               "listeners":[
+                  {
+                     "protocol":"tcp",
+                     "name":"nlb_li_tcp",
+                     "nlbDevIp":null,
+                     "port":80,
+                     "rules":[
+                        {
+                           "port":78,
+                           "providerEpgRef":"",
+                           "name":"default",
+                           "healthCheck":{
+                              "port":78,
+                              "timeout":0,
+                              "path":null,
+                              "interval":5,
+                              "unhealthyThreshold":2,
+                              "host":null,
+                              "successCode":null,
+                              "useHostFromRule":"no",
+                              "protocol":"tcp"
+                           },
+                           "actionType":"forward",
+                           "index":1,
+                           "action":[
+                              "Forward To "
+                           ],
+                           "protocol":"tcp",
+                           "condition":[
+                              
+                           ]
+                        }
+                     ],
+                     "secPolicy":null,
+                     "certificates":[
+                        
+                     ]
+                  }
+               ]
+            }
+         }
+      }
+   }
+]
+
+// Listeners update:
+
+Then in the listeners module, I should form the payload to update/append listeners data to the service node index:
+      
+Update path should be: "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract1/serviceGraphRelationship/serviceNodesRelationship/0(service_node_index)/deviceConfiguration/cloudLoadBalancer/listeners/listenername",
+
+and the update payload should be like the below one:
+
+"path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract1/serviceGraphRelationship/serviceNodesRelationship/0(service_node_index)/deviceConfiguration/cloudLoadBalancer/listeners/listenername",
+
+Set rule interval 5 to 10 during the update.
+[
+   {
+      "op":"replace",
+      "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract1/serviceGraphRelationship/serviceNodesRelationship/0/deviceConfiguration/cloudLoadBalancer/listeners/nlb_li_tcp",
+      "value":{
+         "protocol":"tcp",
+         "name":"nlb_li_tcp",
+         "nlbDevIp":null,
+         "port":80,
+         "rules":[
+            {
+               "port":78,
+               "providerEpgRef":"",
+               "name":"default",
+               "healthCheck":{
+                  "port":78,
+                  "timeout":0,
+                  "path":null,
+                  "interval":10,
+                  "unhealthyThreshold":2,
+                  "host":null,
+                  "successCode":null,
+                  "useHostFromRule":"no",
+                  "protocol":"tcp"
+               },
+               "actionType":"forward",
+               "index":1,
+               "action":[
+                  "Forward To "
+               ],
+               "protocol":"tcp",
+               "condition":[
+                  
+               ]
+            }
+         ],
+         "secPolicy":null,
+         "certificates":[
+            
+         ]
+      }
+   }
+]
+
+
+
+// ----------
+
+Before removing the site contract SG data of the Contract3:
+// https://173.36.219.30/mso/api/v1/schemas/65debd04b4bb6f5a86ce0283?validate=false
+serviceNodesRelationship: []
+
+{
+   "contractRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/contracts/Contract3",
+   "serviceGraphRelationship":{
+      "serviceGraphRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3",
+      "serviceNodesRelationship":[
+         {
+            "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3/serviceNodes/node1",
+            "deviceConfiguration":{
+               "cloudDevInst":{
+                  "index":2
+               }
+            }
+         },
+         {
+            "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3/serviceNodes/node2",
+            "deviceConfiguration":{
+               "cloudLoadBalancer":{
+                  "listeners":[
+                     {
+                        "protocol":"http",
+                        "name":"1",
+                        "port":80,
+                        "rules":[
+                           {
+                              "port":80,
+                              "responseBody":null,
+                              "path":null,
+                              "host":null,
+                              "providerEpgRef":null,
+                              "urlType":"original",
+                              "redirectCode":"permMoved",
+                              "name":"default",
+                              "healthCheck":null,
+                              "responseCode":"200",
+                              "actionType":"redirect",
+                              "index":1,
+                              "contentType":null,
+                              "redirectProtocol":"https",
+                              "action":[
+                                 "Redirect To original"
+                              ],
+                              "protocol":"http",
+                              "condition":[
+                                 
+                              ],
+                              "redirectPort":443
+                           }
+                        ],
+                        "secPolicy":null,
+                        "certificates":[
+                           
+                        ]
+                     }
+                  ]
+               }
+            }
+         },
+         {
+            "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3/serviceNodes/node3",
+            "deviceConfiguration":{
+               "cloudLoadBalancer":{
+                  "listeners":[
+                     {
+                        "protocol":"udp",
+                        "name":"2",
+                        "nlbDevIp":null,
+                        "port":80,
+                        "rules":[
+                           {
+                              "port":80,
+                              "providerEpgRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/anps/AP1/epgs/EPG1",
+                              "name":"default",
+                              "healthCheck":{
+                                 "port":80,
+                                 "timeout":0,
+                                 "path":null,
+                                 "interval":5,
+                                 "unhealthyThreshold":2,
+                                 "host":null,
+                                 "successCode":null,
+                                 "useHostFromRule":"no",
+                                 "protocol":"tcp"
+                              },
+                              "actionType":"forward",
+                              "index":1,
+                              "action":[
+                                 "Forward To EPG1"
+                              ],
+                              "protocol":"udp",
+                              "condition":[
+                                 
+                              ]
+                           }
+                        ],
+                        "secPolicy":null,
+                        "certificates":[
+                           
+                        ]
+                     }
+                  ]
+               }
+            }
+         }
+      ]
+   }
+}
+
+
+Removing Payload:
+// https://173.36.219.30/mso/api/v1/schemas/65debd04b4bb6f5a86ce0283?validate=false
+
+[
+  {
+    "op":"remove",
+    "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract3/serviceGraphRelationship",
+    "value":{
+      "serviceGraphRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3",
+      "serviceNodesRelationship":[
+      ]
+    }
+  }
+]
+
+Attach the site contract SG payload:
+
+[
+  {
+    "op":"add",
+    "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract3/serviceGraphRelationship",
+    "value":{
+      "serviceGraphRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3",
+      "serviceNodesRelationship":[
+      ]
+    }
+  }
+]
+
+
+
+Insert service nodes in the reverse order:
+
+
+2. Insert node2
+// https://173.36.219.30/mso/api/v1/schemas/65debd04b4bb6f5a86ce0283?validate=false
+
+[
+   {
+      "op":"add",
+      "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract3/serviceGraphRelationship/serviceNodesRelationship/1",
+      "value":{
+            "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3/serviceNodes/node2",
+            "deviceConfiguration":{
+               "cloudLoadBalancer":{
+                  "listeners":[
+                     {
+                        "protocol":"http",
+                        "name":"1",
+                        "port":80,
+                        "rules":[
+                           {
+                              "port":80,
+                              "responseBody":null,
+                              "path":null,
+                              "host":null,
+                              "providerEpgRef":null,
+                              "urlType":"original",
+                              "redirectCode":"permMoved",
+                              "name":"default",
+                              "healthCheck":null,
+                              "responseCode":"200",
+                              "actionType":"redirect",
+                              "index":1,
+                              "contentType":null,
+                              "redirectProtocol":"https",
+                              "action":[
+                                 "Redirect To original"
+                              ],
+                              "protocol":"http",
+                              "condition":[
+                                 
+                              ],
+                              "redirectPort":443
+                           }
+                        ],
+                        "secPolicy":null,
+                        "certificates":[
+                           
+                        ]
+                     }
+                  ]
+               }
+            }
+         }
+      }
+]
+
+1. Insert node3
+// https://173.36.219.30/mso/api/v1/schemas/65debd04b4bb6f5a86ce0283?validate=false
+
+[
+   {
+      "op":"add",
+      "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract3/serviceGraphRelationship/serviceNodesRelationship/2",
+      "value":{
+            "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3/serviceNodes/node3",
+            "deviceConfiguration":{
+               "cloudLoadBalancer":{
+                  "listeners":[
+                     {
+                        "protocol":"udp",
+                        "name":"2",
+                        "nlbDevIp":null,
+                        "port":80,
+                        "rules":[
+                           {
+                              "port":80,
+                              "providerEpgRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/anps/AP1/epgs/EPG1",
+                              "name":"default",
+                              "healthCheck":{
+                                 "port":80,
+                                 "timeout":0,
+                                 "path":null,
+                                 "interval":5,
+                                 "unhealthyThreshold":2,
+                                 "host":null,
+                                 "successCode":null,
+                                 "useHostFromRule":"no",
+                                 "protocol":"tcp"
+                              },
+                              "actionType":"forward",
+                              "index":1,
+                              "action":[
+                                 "Forward To EPG1"
+                              ],
+                              "protocol":"udp",
+                              "condition":[
+                                 
+                              ]
+                           }
+                        ],
+                        "secPolicy":null,
+                        "certificates":[
+                           
+                        ]
+                     }
+                  ]
+               }
+            }
+         }
+      }
+   
+]
+
+
+3. Insert node1
+// https://173.36.219.30/mso/api/v1/schemas/65debd04b4bb6f5a86ce0283?validate=false
+
+[
+   {
+      "op":"add",
+      "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract3/serviceGraphRelationship/serviceNodesRelationship/0",
+      "value":{
+         "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3/serviceNodes/node1",
+         "deviceConfiguration":{
+            "cloudDevInst":{
+               "index":2
+            }
+         }
+      }
+   }
+]
+
+
+
+------
+
+
+
+[
+  {
+    "op":"add",
+    "path":"/sites/65deb9cebcb66752c31ba316-Template1/contracts/Contract1/serviceGraphRelationship",
+    "value":{
+      "serviceGraphRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG1",
+      "serviceNodesRelationship":[
+      ]
+    }
+  }
+]
+
+
+
+{
+   "contractRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/contracts/Contract3",
+   "serviceGraphRelationship":{
+      "serviceGraphRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3",
+      "serviceNodesRelationship":[
+         {
+            "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3/serviceNodes/node1"
+         },
+         {
+            "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3/serviceNodes/node2"
+         },
+         {
+            "serviceNodeRef":"/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3/serviceNodes/node3"
+         }
+      ]
+   }
+}
+
+
+
+{"serviceNodeRef": "/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3/serviceNodes/node1"…},
+{"serviceNodeRef": "/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3/serviceNodes/node2",…},
+{"serviceNodeRef": "/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3/serviceNodes/node2"…},
+{"serviceNodeRef": "/schemas/65debd04b4bb6f5a86ce0283/templates/Template1/serviceGraphs/SG3/serviceNodes/node3"…}
+
+// When the site contract sg is saved without listeners
+
+"contracts":[
+   {
+      "contractRef": "/schemas/65e55d3eb4bb6f5a86d160f5/templates/T1/contracts/C1",
+      "serviceGraphRelationship":{
+         "serviceGraphRef": "/schemas/65e55d3eb4bb6f5a86d160f5/templates/T1/serviceGraphs/SG1",
+         "serviceNodesRelationship":[
+            {
+               "serviceNodeRef": "/schemas/65e55d3eb4bb6f5a86d160f5/templates/T1/serviceGraphs/SG1/serviceNodes/node1" -> ansible_tenant_xyz_firewall1(Third-Party Firewall
+)
+            },
+            {
+               "serviceNodeRef": "/schemas/65e55d3eb4bb6f5a86d160f5/templates/T1/serviceGraphs/SG1/serviceNodes/node2" -> ansible_tenant_xyz_adc(Third-Party Load Balancer
+)
+            }
+         ]
+      }
+   }
+],

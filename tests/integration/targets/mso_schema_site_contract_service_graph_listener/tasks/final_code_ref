@@ -1,0 +1,438 @@
+# Test code for the MSO modules
+# Copyright: (c) 2020, Shreyas Srish (@shrsr) <ssrish@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI MultiSite host, username and password
+  ansible.builtin.fail:
+    msg: "Please define the following variables: mso_hostname, mso_username and mso_password."
+  when: mso_hostname is not defined or mso_username is not defined or mso_password is not defined
+
+# CLEAN ENVIRONMENT
+- name: Set vars
+  ansible.builtin.set_fact:
+    mso_info: &mso_info
+      host: "{{ mso_hostname }}"
+      username: "{{ mso_username }}"
+      password: "{{ mso_password }}"
+      validate_certs: "{{ mso_validate_certs | default(false) }}"
+      use_ssl: "{{ mso_use_ssl | default(true) }}"
+      use_proxy: "{{ mso_use_proxy | default(false) }}"
+      output_level: '{{ mso_output_level | default("info") }}'
+    aci_info: &aci_info
+      host: "{{ apic_hostname }}"
+      username: "{{ apic_username }}"
+      password: "{{ apic_password }}"
+      validate_certs: "{{ apic_validate_certs | default(false) }}"
+      use_ssl: "{{ apic_use_ssl | default(true) }}"
+      use_proxy: "{{ apic_use_proxy | default(true) }}"
+      output_level: '{{ mso_output_level | default("info") }}'
+
+# - name: Query MSO version
+#   cisco.mso.mso_version:
+#     <<: *mso_info
+#     state: query
+#   register: version
+
+- name: Set ansible_network_os to cisco.aci.aci and ansible_connection to local
+  ansible.builtin.set_fact:
+    ansible_connection: local
+    ansible_network_os: cisco.aci.aci
+
+- name: Reset the ansible_connection to access the APIC
+  ansible.builtin.meta: reset_connection
+
+- name: Include tasks for L4-L7 devices
+  ansible.builtin.include_tasks: l4_l7_devices.yml
+
+- name: Set ansible_network_os to cisco.nd.nd and ansible_connection to ansible.netcommon.httpapi
+  ansible.builtin.set_fact:
+    ansible_connection: ansible.netcommon.httpapi
+    ansible_network_os: cisco.nd.nd
+
+- name: Reset the ansible_connection to access the MSO/NDO
+  ansible.builtin.meta: reset_connection
+
+- name: Associate Azure site with ansible_test # Azure Task
+  cisco.mso.mso_tenant_site:
+    <<: *mso_info
+    tenant: ansible_tenant_xyz
+    site: azure_ansible_test_2
+    cloud_account: "{{ azure_cloud_account | default('uni/tn-ansible_test/act-[0]-vendor-azure') }}"
+    state: present
+  when:
+    - query_cloud.current | length > 0
+    - query_cloud.current.0.cloudProvP.attributes.vendor == "azure"
+
+# ----------------- site contract service graph code begins -----------------
+
+- name: Remove ansible_schema_xyz to start the test - setup part
+  cisco.mso.mso_schema:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    state: absent
+
+- name: Remove ansible_tenant_xyz tenant to start the test - setup part
+  cisco.mso.mso_tenant:
+    <<: *mso_info
+    tenant: ansible_tenant_xyz
+    state: absent
+
+# - name: Ensure site exists
+#   cisco.mso.mso_site:
+#     <<: *mso_info
+#     site: '{{ mso_site | default("ansible_test") }}'
+#     apic_username: "{{ apic_username }}"
+#     apic_password: "{{ apic_password }}"
+#     apic_site_id: "{{ apic_site_id | default(101) }}"
+#     urls:
+#       - https://{{ apic_hostname }}
+#     state: present
+
+- name: Add ansible_tenant_xyz tenant
+  cisco.mso.mso_tenant:
+    <<: *mso_info
+    tenant: ansible_tenant_xyz
+    users: ["{{ mso_username }}"]
+    sites: ["azure_ansible_test_2"]
+    state: present
+
+- name: Ensure ansible_schema_xyz with Template1 and Template2 exist
+  cisco.mso.mso_schema_template:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    tenant: "ansible_tenant_xyz"
+    template: "{{ item }}"
+    state: present
+  loop:
+    - "Template1"
+    - "Template2"
+
+- name: Create ansible_service_graph schema template service graph
+  cisco.mso.mso_schema_template_service_graph:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    template: "Template1"
+    service_graph: "ansible_service_graph"
+    display_name: "ansible_service_graph"
+    service_nodes:
+      - type: firewall
+      - type: load-balancer
+      - type: other
+    filter_after_first_node: allow_all
+    state: present
+
+- name: Bind ansible_test site with Template1 and Template2
+  cisco.mso.mso_schema_site:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    template: "{{ item }}"
+    site: "ansible_test"
+    state: present
+  loop:
+    - "Template1"
+    - "Template2"
+
+- name: Add Filter1 to Template1
+  cisco.mso.mso_schema_template_filter_entry: &filter_present
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    template: "Template1"
+    filter: Filter1
+    entry: Filter1Entry
+    state: present
+
+- name: Add Contracts to the Template1
+  cisco.mso.mso_schema_template_contract_filter:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    template: "Template1"
+    contract: "{{ item }}"
+    filter: Filter1
+    state: present
+  loop:
+    - Contract1
+    - Contract2
+    - Contract3
+
+- name: Add a VRF1 to Template1
+  cisco.mso.mso_schema_template_vrf:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    template: "Template1"
+    vrf: VRF1
+    state: present
+
+- name: Add a VRF2 to Template1
+  cisco.mso.mso_schema_template_vrf:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    template: "Template1"
+    vrf: VRF2
+    state: present
+
+- name: Add BD1 to Template1
+  cisco.mso.mso_schema_template_bd:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    template: "Template1"
+    bd: BD1
+    vrf:
+      name: VRF1
+    state: present
+
+- name: Add BD2 to Template1
+  cisco.mso.mso_schema_template_bd:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    template: "Template1"
+    bd: BD2
+    vrf:
+      name: VRF2
+    state: present
+
+- name: Add AP1 to Template1
+  cisco.mso.mso_schema_template_anp:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    template: "Template1"
+    anp: AP1
+    state: present
+
+- name: Add EPG1 to AP1 in Template1
+  cisco.mso.mso_schema_template_anp_epg:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    template: "Template1"
+    anp: AP1
+    epg: EPG1
+    bd:
+      name: BD1
+    state: present
+
+- name: Bind Contract1 and 2 with EPG1 provider
+  cisco.mso.mso_schema_template_anp_epg_contract:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    template: "Template1"
+    anp: AP1
+    epg: EPG1
+    contract:
+      name: "{{ item }}"
+      type: provider
+    state: present
+  loop:
+    - Contract1
+    - Contract2
+
+- name: Bind Contract1 with EPG1 consumer
+  cisco.mso.mso_schema_template_anp_epg_contract:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    template: "Template1"
+    anp: AP1
+    epg: EPG1
+    contract:
+      name: "{{  item }}"
+      type: consumer
+    state: present
+  loop:
+    - Contract1
+    - Contract2
+
+- name: Bind Contract1 and 2 with template service graph - ansible_service_graph
+  cisco.mso.mso_schema_template_contract_service_graph:
+    <<: *mso_info
+    schema: "ansible_schema_xyz"
+    template: "Template1"
+    contract: "{{ item }}"
+    service_graph: ansible_service_graph
+    service_nodes:
+      - provider: BD1
+        consumer: BD2
+      - provider: BD1
+        consumer: BD2
+      - provider: BD1
+        consumer: BD2
+    state: present
+  loop:
+    - Contract1
+    - Contract2
+
+# --------
+
+- name: Create a service graph 1 at Template1 for the Azure site service graph test # Azure Task
+  cisco.mso.mso_schema_template_service_graph:
+    <<: *mso_info
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: Template1
+    service_graph: SG1
+    display_name: sg1
+    service_nodes:
+      - type: firewall
+      - type: load-balancer
+      - type: other
+    filter_after_first_node: allow_all
+    state: present
+
+- name: Add Azure site to a schema Template1 for the Azure site service graph test # Azure Task
+  cisco.mso.mso_schema_site:
+    <<: *mso_info
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    site: '{{ mso_site | default("ansible_test") }}'
+    template: Template1
+    state: present
+
+- name: Add Service Graph 1 at site level for the Azure site service graph test - check_mode # Azure Task
+  cisco.mso.mso_schema_site_service_graph: &az_sg1_cm_present
+    <<: *mso_info
+    schema: '{{ mso_schema | default("ansible_test") }}'
+    template: Template1
+    service_graph: SG1
+    site: '{{ mso_site | default("ansible_test") }}'
+    tenant: ansible_tenant_xyz
+    devices:
+      - name: ansible_test_firewall1
+        provider_connector_type: source_nat
+        provider_interface: TP_FW_Inf1
+        consumer_connector_type: redirect
+        consumer_interface: TP_FW_Inf1
+      - name: ansible_test_app_lb
+      - name: ansible_test_other
+        provider_connector_type: destination_nat
+        consumer_connector_type: redirect
+    state: present
+    output_level: debug
+  register: az_sg1_cm_present
+  # check_mode: true
+# # To clear the ACI Config
+# - name: Set ansible_network_os to cisco.aci.aci and ansible_connection to local
+#   ansible.builtin.set_fact:
+#     ansible_connection: local
+#     ansible_network_os: cisco.aci.aci
+
+# - name: Reset the ansible_connection to access the APIC
+#   ansible.builtin.meta: reset_connection
+# - name: Remove the ansible_test tenant from APIC
+#   cisco.aci.aci_tenant:
+#     <<: *aci_info
+#     name: ansible_test
+#     state: absent
+# # --------
+
+# - name: Remove the site contract Contract1 - service graph from the Template1 - normal_mode
+#   cisco.mso.mso_schema_site_contract_service_graph:
+#     <<: *mso_info
+#     schema: ansible_schema_xyz
+#     template: Template1
+#     site: ansible_test
+#     contract: Contract1
+#     state: absent
+#   register: site_con_sg_absent_nm
+# ------------------- site contract service graph code ends -------------------
+# ------------------- site service graph code begins -------------------
+# Service Graph at Site Level is blocked by validations in MSO/NDO before v3.3.
+# It is supported after v3.3 by using validate=false.
+# - name: Execute tasks only for MSO version >= 3.3
+#   when: version.current.version is version('3.3', '>=')
+#   block:
+#     # - name: Ensure schema 1 with Template1, 2 and 3 exist
+#     #   cisco.mso.mso_schema_template:
+#     #     <<: *mso_info
+#     #     schema: '{{ mso_schema | default("ansible_test") }}'
+#     #     tenant: ansible_tenant_xyz
+#     #     template: "{{ item }}"
+#     #     state: present
+#     #   loop:
+#     #     - "Template1"
+#     #     - "Template2"
+#     #     - "Template3" # Azure Task
+
+#     # - name: Ensure schema 2 with Template1 exists
+#     #   cisco.mso.mso_schema_template:
+#     #     <<: *mso_info
+#     #     schema: '{{ mso_schema | default("ansible_test") }}_2'
+#     #     tenant: ansible_tenant_xyz
+#     #     template: Template1
+#     #     state: present
+
+#     - name: Create service graph 3 at Template level
+#       cisco.mso.mso_schema_template_service_graph:
+#         <<: *mso_info
+#         schema: '{{ mso_schema | default("ansible_test") }}'
+#         template: Template1
+#         service_graph: SG3
+#         display_name: sg3
+#         service_nodes:
+#           - type: firewall
+#           - type: load-balancer
+#           - type: other
+#         filter_after_first_node: allow_all
+#         state: present
+#       register: sg1_again
+
+#     # Azure tests part
+#     - name: Execute tasks only for cloud sites
+#       when:
+#         - query_cloud.current | length > 0
+#         - query_cloud.current.0.cloudProvP.attributes.vendor == "azure"
+#       block:
+#         - name: Create a service graph 1 at Template3 for the Azure site service graph test # Azure Task
+#           cisco.mso.mso_schema_template_service_graph:
+#             <<: *mso_info
+#             schema: '{{ mso_schema | default("ansible_test") }}'
+#             template: Template3
+#             service_graph: SG1
+#             display_name: sg1
+#             service_nodes:
+#               - type: firewall
+#               - type: load-balancer
+#               - type: other
+#             filter_after_first_node: allow_all
+#             state: present
+
+#         - name: Add Azure site to a schema Template3 for the Azure site service graph test # Azure Task
+#           cisco.mso.mso_schema_site:
+#             <<: *mso_info
+#             schema: '{{ mso_schema | default("ansible_test") }}'
+#             site: '{{ mso_site | default("ansible_test") }}'
+#             template: Template3
+#             state: present
+
+#         - name: Add Service Graph 1 at site level for the Azure site service graph test - check_mode # Azure Task
+#           cisco.mso.mso_schema_site_service_graph: &az_sg1_cm_present
+#             <<: *mso_info
+#             schema: '{{ mso_schema | default("ansible_test") }}'
+#             template: Template3
+#             service_graph: SG1
+#             site: '{{ mso_site | default("ansible_test") }}'
+#             tenant: ansible_tenant_xyz
+#             devices:
+#               - name: ansible_test_firewall1
+#                 provider_connector_type: source_nat
+#                 provider_interface: TP_FW_Inf1
+#                 consumer_connector_type: redirect
+#                 consumer_interface: TP_FW_Inf1
+#               - name: ansible_test_app_lb
+#               - name: ansible_test_other
+#                 provider_connector_type: destination_nat
+#                 consumer_connector_type: redirect
+#             state: present
+#             output_level: debug
+#           register: az_sg1_cm_present
+#           # check_mode: true
+
+#     # To clear the ACI Config
+#     - name: Set ansible_network_os to cisco.aci.aci and ansible_connection to local
+#       ansible.builtin.set_fact:
+#         ansible_connection: local
+#         ansible_network_os: cisco.aci.aci
+
+#     - name: Reset the ansible_connection to access the APIC
+#       ansible.builtin.meta: reset_connection
+
+#     - name: Remove the ansible_test tenant from APIC
+#       cisco.aci.aci_tenant:
+#         <<: *aci_info
+#         name: ansible_test
+#         state: absent
