@@ -1459,6 +1459,34 @@ class MSOModule(object):
     def validate_schema(self, schema_id):
         return self.request("schemas/{id}/validate".format(id=schema_id), method="GET")
 
+    def input_validation(self, attr_name, attr_value, required_attributes, target_object, object_position=None, object_name=None):
+        if attr_name in (None, "") or attr_value in (None, ""):
+            self.module.fail_json(msg="The attribute and value must be set")
+
+        empty_attributes = []
+        for attribute in required_attributes:
+            if target_object.get(attribute) in (None, "", [], {}, 0):
+                empty_attributes.append(attribute)
+
+        if object_position is not None and object_name is not None and empty_attributes:
+            self.module.fail_json(
+                msg="When the '{}' is '{}', the {} attributes must be set at the object position: {} and the object name: {}".format(
+                    attr_name, attr_value, empty_attributes, object_position, object_name
+                )
+            )
+        elif object_position is not None and object_name is None and empty_attributes:
+            self.module.fail_json(
+                msg="When the '{}' is '{}', the {} attributes must be set at the object position: {}".format(
+                    attr_name, attr_value, empty_attributes, object_position
+                )
+            )
+        elif object_position is None and object_name is not None and empty_attributes:
+            self.module.fail_json(
+                msg="When the '{}' is '{}', the {} attributes must be set and the object name: {}".format(attr_name, attr_value, empty_attributes, object_name)
+            )
+        elif empty_attributes:
+            self.module.fail_json(msg="When the '{}' is '{}', the {} attributes must be set".format(attr_name, attr_value, empty_attributes))
+
 
 def service_node_ref_str_to_dict(serviceNodeRefStr):
     serviceNodeRefTokens = serviceNodeRefStr.split("/")

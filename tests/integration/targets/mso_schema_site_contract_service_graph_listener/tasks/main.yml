@@ -28,25 +28,25 @@
       use_proxy: "{{ apic_use_proxy | default(true) }}"
       output_level: '{{ mso_output_level | default("info") }}'
 
-# # Setup part begins
-# - name: Set ansible_network_os to cisco.aci.aci and ansible_connection to local
-#   ansible.builtin.set_fact:
-#     ansible_connection: local
-#     ansible_network_os: cisco.aci.aci
+# Setup part begins
+- name: Set ansible_network_os to cisco.aci.aci and ansible_connection to local
+  ansible.builtin.set_fact:
+    ansible_connection: local
+    ansible_network_os: cisco.aci.aci
 
-# - name: Reset the ansible_connection to access the APIC
-#   ansible.builtin.meta: reset_connection
+- name: Reset the ansible_connection to access the APIC
+  ansible.builtin.meta: reset_connection
 
-# - name: Include tasks for L4-L7 devices
-#   ansible.builtin.include_tasks: l4_l7_devices.yml
+- name: Include tasks for L4-L7 devices
+  ansible.builtin.include_tasks: l4_l7_devices.yml
 
-# - name: Set ansible_network_os to cisco.nd.nd and ansible_connection to ansible.netcommon.httpapi
-#   ansible.builtin.set_fact:
-#     ansible_connection: ansible.netcommon.httpapi
-#     ansible_network_os: cisco.nd.nd
+- name: Set ansible_network_os to cisco.nd.nd and ansible_connection to ansible.netcommon.httpapi
+  ansible.builtin.set_fact:
+    ansible_connection: ansible.netcommon.httpapi
+    ansible_network_os: cisco.nd.nd
 
-# - name: Reset the ansible_connection to access the MSO/NDO
-#   ansible.builtin.meta: reset_connection
+- name: Reset the ansible_connection to access the MSO/NDO
+  ansible.builtin.meta: reset_connection
 
 - name: Remove ansible_schema to start the test - setup part
   cisco.mso.mso_schema:
@@ -74,9 +74,9 @@
     site: azure_ansible_test_2
     cloud_account: "uni/tn-{{ mso_tenant | default('ansible_test') }}/act-[{{ azure_cloud_account | default(123) }}]-vendor-azure"
     state: present
-  # when: # Need to enable the comment
-  #   - query_cloud.current | length > 0
-  #   - query_cloud.current.0.cloudProvP.attributes.vendor == "azure"
+  when: # Need to enable the comment
+    - query_cloud.current | length > 0
+    - query_cloud.current.0.cloudProvP.attributes.vendor == "azure"
 
 - name: Ensure ansible_schema with ansible_template1 and ansible_template2 exist
   cisco.mso.mso_schema_template:
@@ -258,9 +258,8 @@
 
 - name: Execute tasks only for cloud sites
   when:
-    - 1 == 1
-    # - query_cloud.current | length > 0
-    # - query_cloud.current.0.cloudProvP.attributes.vendor == "azure"
+    - query_cloud.current | length > 0
+    - query_cloud.current.0.cloudProvP.attributes.vendor == "azure"
   block:
     - name: Add Service Graph 1 at site level for the Azure site service graph test
       cisco.mso.mso_schema_site_service_graph:
