@@ -1,0 +1,417 @@
+# Test code for the MSO modules
+# Copyright: (c) 2024, Sabari Jaganathan (@sajagana) <sajagana@cisco.com>
+
+# GNU General Public License v3.0+ (see LICENSE or https://www.gnu.org/licenses/gpl-3.0.txt)
+
+- name: Test that we have an ACI MultiSite host, username and password
+  ansible.builtin.fail:
+    msg: "Please define the following variables: mso_hostname, mso_username and mso_password."
+  when: mso_hostname is not defined or mso_username is not defined or mso_password is not defined
+
+# CLEAN ENVIRONMENT
+- name: Set vars
+  ansible.builtin.set_fact:
+    mso_info: &mso_info
+      host: "{{ mso_hostname }}"
+      username: "{{ mso_username }}"
+      password: "{{ mso_password }}"
+      validate_certs: "{{ mso_validate_certs | default(false) }}"
+      use_ssl: "{{ mso_use_ssl | default(true) }}"
+      use_proxy: "{{ mso_use_proxy | default(true) }}"
+      output_level: '{{ mso_output_level | default("info") }}'
+
+# QUERY VERSION
+- name: Query MSO version
+  cisco.mso.mso_version:
+    <<: *mso_info
+    state: query
+  register: version
+
+- name: Execute tasks only for NDO version > 4.2
+  when: version.current.version is version('4.2', '>')
+  block:
+    # Setup Part
+    - name: Ensure l3out template not exist
+      cisco.mso.ndo_template: &ndo_l3out_template_absent
+        <<: *mso_info
+        template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        template_type: l3out
+        tenant: '{{ ansible_tenant | default("ansible_test") }}'
+        sites:
+          - name: '{{ mso_site | default("ansible_test") }}'
+        state: absent
+
+    - name: Ensure tenant policy template not exists
+      cisco.mso.ndo_template: &tenant_pol_template_absent
+        <<: *mso_info
+        name: ansible_test_policy
+        template_type: tenant
+        tenant: '{{ ansible_tenant | default("ansible_test") }}'
+        state: absent
+
+    - name: Ensure ansible_test schema template not exist
+      cisco.mso.mso_schema_template: &mso_schema_template_absent
+        <<: *mso_info
+        schema: '{{ ansible_schema | default("ansible_test") }}'
+        tenant: '{{ ansible_tenant | default("ansible_test") }}'
+        template: "Template1"
+        state: absent
+
+    - name: Ensure ansible_test site exist
+      cisco.mso.mso_site:
+        <<: *mso_info
+        site: '{{ mso_site | default("ansible_test") }}'
+        state: query
+      register: ansible_test_site
+
+    - name: Ensure ansible_test tenant exist
+      cisco.mso.mso_tenant:
+        <<: *mso_info
+        tenant: '{{ ansible_tenant | default("ansible_test") }}'
+        users:
+          - "{{ mso_username }}"
+        sites:
+          - '{{ mso_site | default("ansible_test") }}'
+        state: present
+      register: ansible_test_tenant
+      when: ansible_test_site.current.common.name == 'ansible_test'
+
+    - name: Ensure common tenant exist
+      cisco.mso.mso_tenant:
+        <<: *mso_info
+        tenant: common
+        users:
+          - "{{ mso_username }}"
+        sites:
+          - '{{ mso_site | default("ansible_test") }}'
+        state: present
+      register: ansible_test_tenant
+      when: ansible_test_site.current.common.name == 'ansible_test'
+
+    # Schema Template Setup for the VRF
+    - name: Add an ansible_test schema template
+      cisco.mso.mso_schema_template:
+        <<: *mso_schema_template_absent
+        state: present
+
+    - name: Add a new VRF1
+      cisco.mso.mso_schema_template_vrf:
+        <<: *mso_info
+        schema: '{{ ansible_schema | default("ansible_test") }}'
+        template: "Template1"
+        vrf: VRF1
+        layer3_multicast: true
+        state: present
+
+    # Tenant Policy Template Setup for the L3Out Node Routing Policy
+    - name: Ensure tenant policy template exists
+      cisco.mso.ndo_template:
+        <<: *tenant_pol_template_absent
+        state: present
+      register: ansible_test_policy
+
+    - name: Ensure common tenant policy template exists
+      cisco.mso.ndo_template:
+        <<: *tenant_pol_template_absent
+        name: common_ansible_test_policy
+        tenant: common
+        state: present
+      register: common_ansible_test_policy
+
+    - name: Add a new L3Out Node Routing Policy
+      cisco.mso.mso_rest:
+        <<: *mso_info
+        path: "/mso/api/v1/templates/{{ ansible_test_policy.current.templateId }}"
+        method: patch
+        content:
+          - op: add
+            path: "/tenantPolicyTemplate/template/l3OutNodePolGroups/-"
+            value:
+              name: "{{ item }}"
+              asPathPol:
+                asPathMultipathRelax: false
+              bfdMultiHopPol:
+                adminState: enabled
+                detectionMultiplier: 3
+                minRxInterval: 250
+                minTxInterval: 250
+              bgpTimerPol:
+                keepAliveInterval: 60
+                holdInterval: 180
+                staleInterval: 300
+                maxAslimit: 2000
+                gracefulRestartHelper: true
+      loop:
+        - ans_node_policy_group_1
+        - ans_node_policy_group_2
+
+    - name: Add a new L3Out Node Routing Policy to the common template
+      cisco.mso.mso_rest:
+        <<: *mso_info
+        path: "/mso/api/v1/templates/{{ common_ansible_test_policy.current.templateId }}"
+        method: patch
+        content:
+          - op: add
+            path: "/tenantPolicyTemplate/template/l3OutNodePolGroups/-"
+            value:
+              name: ans_node_policy_group_common
+              asPathPol:
+                asPathMultipathRelax: false
+              bfdMultiHopPol:
+                adminState: enabled
+                detectionMultiplier: 3
+                minRxInterval: 250
+                minTxInterval: 250
+              bgpTimerPol:
+                keepAliveInterval: 60
+                holdInterval: 180
+                staleInterval: 300
+                maxAslimit: 2000
+                gracefulRestartHelper: true
+
+    # L3Out Template Setup
+    - name: Create a new l3out template
+      cisco.mso.ndo_template:
+        <<: *ndo_l3out_template_absent
+        state: present
+      register: create_new_l3out_policy_template
+
+    - name: Create l3out_1 object without routing protocols
+      cisco.mso.ndo_l3out_template: &l3out_1_present
+        <<: *mso_info
+        l3out_template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        name: "l3out_1"
+        vrf:
+          name: "VRF1"
+          schema: '{{ ansible_schema | default("ansible_test") }}'
+          template: "Template1"
+        state: "present"
+
+    - name: Create l3out_2 object with bgp enabled
+      cisco.mso.ndo_l3out_template:
+        <<: *l3out_1_present
+        name: "l3out_2"
+        bgp:
+          state: enabled
+    # Test Part
+
+    - name: Query all L3Out node group policy objects when the L3Out is empty - $query_all_node_groups_1
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *mso_info
+        template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        l3out: "l3out_2"
+        state: query
+      register: query_all_node_groups_1
+
+    - name: Query node_group_policy_1 L3Out node group policy object when the L3Out is empty - $query_node_group_policy_1
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *mso_info
+        template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        l3out: "l3out_2"
+        name: "node_group_policy_1"
+        state: query
+      register: query_node_group_policy_1
+
+    - name: Create L3Out node group policy object with default values - check mode - $cm_node_group_policy_1_present
+      cisco.mso.ndo_l3out_node_group_policy: &cm_node_group_policy_1_present
+        <<: *mso_info
+        template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        l3out: "l3out_2"
+        name: "node_group_policy_1"
+        state: present
+      check_mode: true
+      register: cm_node_group_policy_1_present
+      ignore_errors: true
+
+    - name: Create L3Out node group policy object with default values - normal mode - $nm_node_group_policy_1_present
+      cisco.mso.ndo_l3out_node_group_policy: &nm_node_group_policy_1_present
+        <<: *cm_node_group_policy_1_present
+      register: nm_node_group_policy_1_present
+      ignore_errors: true
+
+    - name: Create L3Out node group policy object with default values - normal mode again - $nm_node_group_policy_1_present_again
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *nm_node_group_policy_1_present
+      register: nm_node_group_policy_1_present_again
+      ignore_errors: true
+
+    - name: Update L3Out node group policy object with check mode - $cm_update_node_group_policy_1
+      cisco.mso.ndo_l3out_node_group_policy: &cm_update_node_group_policy_1
+        <<: *nm_node_group_policy_1_present
+        description: "Test description"
+        node_routing_policy: ans_node_policy_group_1
+        bfd_multi_hop_authentication: enabled
+        bfd_multi_hop_key_id: 1
+        bfd_multi_hop_key: TestKey
+        target_dscp: af11
+        state: present
+      check_mode: true
+      register: cm_update_node_group_policy_1
+      ignore_errors: true
+
+    - name: Update L3Out node group policy object with normal mode - $nm_update_node_group_policy_1
+      cisco.mso.ndo_l3out_node_group_policy: &nm_update_node_group_policy_1
+        <<: *cm_update_node_group_policy_1
+      register: nm_update_node_group_policy_1
+      ignore_errors: true
+
+    - name: Update L3Out node group policy object with normal mode again - $nm_update_node_group_policy_1_again
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *nm_update_node_group_policy_1
+      register: nm_update_node_group_policy_1_again
+      ignore_errors: true
+
+    - name: Update node_group_policy_1 - bfd_multi_hop_key id, value, target_dscp and node_routing_policy values - $update_node_group_policy_attrs
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *mso_info
+        template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        l3out: "l3out_2"
+        name: "node_group_policy_1"
+        description: "Test description updated"
+        node_routing_policy: ans_node_policy_group_2
+        bfd_multi_hop_authentication: enabled
+        bfd_multi_hop_key_id: 2
+        bfd_multi_hop_key: TestKeyUpdated
+        target_dscp: af12
+        state: present
+      register: update_node_group_policy_attrs
+      ignore_errors: true
+
+    - name: Clear node_group_policy_1 - bfd_multi_hop_key id, value, target_dscp and node_routing_policy values - $clear_node_group_policy_attrs
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *mso_info
+        template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        l3out: "l3out_2"
+        name: "node_group_policy_1"
+        description: ""
+        node_routing_policy: ""
+        bfd_multi_hop_authentication: disabled
+        state: present
+      register: clear_node_group_policy_attrs
+      ignore_errors: true
+
+    - name: Query node_group_policy_1 - $query_node_group_policy_1
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *mso_info
+        template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        l3out: "l3out_2"
+        name: "node_group_policy_1"
+        # description: ""
+        # node_routing_policy: ""
+        # bfd_multi_hop_authentication: disabled
+        state: query
+      register: query_node_group_policy_1
+      ignore_errors: true
+
+    - name: Add node_group_policy_2 with common tenant node_routing_policy object - $add_node_group_policy_2
+      cisco.mso.ndo_l3out_node_group_policy: &add_node_group_policy_2
+        <<: *mso_info
+        template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        l3out: "l3out_2"
+        name: "node_group_policy_2"
+        description: "Create test description"
+        target_dscp: cs7
+        node_routing_policy: "ans_node_policy_group_common"
+        # bfd_multi_hop_authentication: disabled
+        state: present
+      register: add_node_group_policy_2
+      ignore_errors: true
+
+    - name: Query node_group_policy_2 - $query_node_group_policy_2
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *mso_info
+        template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        l3out: "l3out_2"
+        name: "node_group_policy_2"
+        # description: ""
+        # node_routing_policy: ""
+        # bfd_multi_hop_authentication: disabled
+        state: query
+      register: query_node_group_policy_2
+      ignore_errors: true
+
+    - name: Query all node_group_policies - $query_all_node_group_policies
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *mso_info
+        template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        l3out: "l3out_2"
+        # name: "node_group_policy_1"
+        # description: ""
+        # node_routing_policy: ""
+        # bfd_multi_hop_authentication: disabled
+        state: query
+      register: query_all_node_group_policies
+      ignore_errors: true
+
+    - name: Remove node_group_policy_2 with check mode - $cm_rm_node_group_policy_2
+      cisco.mso.ndo_l3out_node_group_policy: &cm_rm_node_group_policy_2
+        <<: *add_node_group_policy_2
+        state: absent
+      check_mode: true
+      register: cm_rm_node_group_policy_2
+
+    - name: Remove node_group_policy_2 with normal mode - $nm_rm_node_group_policy_2
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *cm_rm_node_group_policy_2
+      register: nm_rm_node_group_policy_2
+
+    - name: Remove node_group_policy_2 with normal mode - $nm_rm_node_group_policy_2_again
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *cm_rm_node_group_policy_2
+      register: nm_rm_node_group_policy_2_again
+    # Negative test part begins
+
+    - name: Create L3Out node group policy object with invalid l3out name - $node_group_policy_nt
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *mso_info
+        template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        l3out: "l3out_nt"
+        name: "node_group_policy_nt"
+        state: present
+      register: node_group_policy_nt
+      ignore_errors: true
+
+    # "message": "Invalid configuration in L3Out 'l3out_1': node group 'nt_node_group_policy_2': BFD Multihop is not supported with non-BGP routing protocols. Current protocol: none"
+    - name: Create L3Out node group policy object with l3out_1 template - $node_group_policy_nt_with_l3out_1
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *mso_info
+        template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        l3out: "l3out_1"
+        name: "node_group_policy_nt"
+        node_routing_policy: ans_node_policy_group_1
+        bfd_multi_hop_authentication: enabled
+        bfd_multi_hop_key_id: 12
+        bfd_multi_hop_key: "test"
+        state: present
+      register: node_group_policy_nt_with_l3out_1
+      ignore_errors: true
+
+    - name: Create L3Out node group policy object without key and id when bfd_multi_hop_authentication is enabled - $node_group_policy_nt_without_key
+      cisco.mso.ndo_l3out_node_group_policy:
+        <<: *mso_info
+        template: '{{ ansible_l3out_template | default("ansible_test") }}'
+        l3out: "l3out_1"
+        name: "node_group_policy_nt"
+        bfd_multi_hop_authentication: enabled
+        state: present
+      register: node_group_policy_nt_without_key
+      ignore_errors: true
+
+    # Negative test part ends
+
+    # Cleanup Part
+    - name: Remove l3out tenant template
+      cisco.mso.ndo_template:
+        <<: *ndo_l3out_template_absent
+
+    - name: Remove tenant policy template
+      cisco.mso.ndo_template:
+        <<: *tenant_pol_template_absent
+
+    # - name: Remove fabric_policy template
+    #   cisco.mso.ndo_template:
+    #     <<: *fabric_pol_template_absent
+
+    - name: Remove ansible_test schema template not exist
+      cisco.mso.mso_schema_template:
+        <<: *mso_schema_template_absent

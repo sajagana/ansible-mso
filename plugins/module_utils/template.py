@@ -8,6 +8,7 @@ from __future__ import absolute_import, division, print_function
 __metaclass__ = type
 
 from ansible_collections.cisco.mso.plugins.module_utils.constants import TEMPLATE_TYPES
+from ansible_collections.cisco.mso.plugins.module_utils.utils import generate_api_endpoint
 from collections import namedtuple
 
 KVPair = namedtuple("KVPair", "key value")
@@ -24,11 +25,15 @@ class MSOTemplate:
         self.template_path = ""
         self.template_name = template_name
         self.template_id = template_id
+        self.template_type = template_type
+        self.template_summary = {}
+        self.l3out = None
+        self.l3out_node_group = None
 
         if template_id:
             # Checking if the template with id exists to avoid error: MSO Error 400: Template ID 665da24b95400f375928f195 invalid
-            template_summary = self.mso.get_obj(self.summaries_path, templateId=self.template_id)
-            if template_summary:
+            self.template_summary = self.mso.get_obj(self.summaries_path, templateId=self.template_id)
+            if self.template_summary:
                 self.template_path = "{0}/{1}".format(self.templates_path, self.template_id)
                 self.template = self.mso.query_obj(self.template_path)
             else:
@@ -44,12 +49,15 @@ class MSOTemplate:
         elif template_name:
             if not template_type:
                 self.mso.fail_json(msg="Template type must be provided when using template name.")
-            template_summary = self.mso.get_obj(
+            self.template_summary = self.mso.get_obj(
                 self.summaries_path, templateName=self.template_name, templateType=TEMPLATE_TYPES[template_type]["template_type"]
             )
-            if template_summary:
-                self.template_path = "{0}/{1}".format(self.templates_path, template_summary.get("templateId"))
+            if self.template_summary:
+                self.template_path = "{0}/{1}".format(self.templates_path, self.template_summary.get("templateId"))
                 self.template = self.mso.query_obj(self.template_path)
+                self.template_id = self.template.get("templateId")
+                self.template_type = self.template.get("templateType")
+
         elif template_type:
             self.template = self.mso.query_objs(self.summaries_path, templateType=TEMPLATE_TYPES[template_type]["template_type"])
         else:
@@ -135,3 +143,66 @@ class MSOTemplate:
         kv_list = [KVPair("uuid", vlan_pool_uuid)]
         match = self.get_object_by_key_value_pairs("VLAN Pool", existing_vlan_pools, kv_list, fail_module=True)
         return match.details.get("name")
+
+    def get_route_map(self, attr_name, tenant_id, tenant_name, route_map, route_map_objects):
+        """
+        Retrieves the details of a specific route map object based on the provided attributes.
+        :param attr_name: The attribute name for error messaging. -> Str
+        :param tenant_id: The ID of the tenant. -> Str
+        :param tenant_name: The name of the tenant. -> Str
+        :param route_map: The name of the route map. -> Str
+        :param route_map_objects: The list of route map objects to search from. -> List
+        :return: The details of the route map object if found, otherwise an empty dictionary. -> Dict
+        """
+        if route_map and tenant_id and route_map_objects:
+            route_map_object = self.get_object_from_list(
+                route_map_objects,
+                [KVPair("name", route_map), KVPair("tenantId", tenant_id)],
+            )
+            if route_map_object[0]:
+                return route_map_object[0].details
+            else:
+                self.mso.fail_json(msg="Provided Route Map {0}: {1} with the tenant: {2} not found.".format(attr_name, route_map, tenant_name))
+        else:
+            return {}
+
+    def get_vrf_object(self, vrf_dict, tenant_id, templates_objects_path):
+        """
+        Get VRF object based on provided parameters.
+        :param vrf_dict: Dictionary containing VRF details. -> Dict
+        :param tenant_id: Id of the tenant. -> Str
+        :param templates_objects_path: Path to the templates objects. -> Str
+        :return: VRF object if found, otherwise fail with an error message. -> Dict
+        """
+
+        vrf_path = generate_api_endpoint(templates_objects_path, **{"type": "vrf", "tenant-id": tenant_id, "include-common": "true"})
+        vrf_objects = self.mso.query_objs(vrf_path)
+        vrf_kv_list = [
+            KVPair("name", vrf_dict.get("name")),
+            KVPair("templateName", vrf_dict.get("template")),
+            KVPair("schemaName", vrf_dict.get("schema")),
+            KVPair("tenantId", tenant_id),
+        ]
+
+        vrf_object = self.get_object_from_list(vrf_objects, vrf_kv_list)
+
+        if vrf_object[0]:
+            return vrf_object[0]
+        else:
+            self.mso.fail_json(msg="Provided VRF {0} not found.".format(vrf_dict.get("name")))
+
+    def set_l3out(self, uuid=None, name=None, fail_module=False):
+        l3outs = self.template.get("l3outTemplate", {}).get("l3outs", [])
+        self.l3out = (
+            self.get_object_by_uuid("L3Out", l3outs, uuid, fail_module)
+            if uuid
+            else self.get_object_by_key_value_pairs("L3Out", l3outs, [KVPair("name", name)], fail_module)
+        )
+
+    def set_l3out_node_group(self, name=None, fail_module=False):
+        # l3outs = self.template.get("l3outTemplate", {}).get("l3outs", [])
+
+        if self.l3out:
+            node_groups = self.l3out.details.get("nodeGroups", [])
+            self.l3out_node_group = self.get_object_by_key_value_pairs("L3Out Node Groups", node_groups, [KVPair("name", name)], fail_module)
+            # self.l3out_node_group = None

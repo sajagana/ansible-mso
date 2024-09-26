@@ -129,3 +129,32 @@ TEMPLATE_TYPES = {
         "template_container": True,
     },
 }
+
+TARGET_DSCP_MAP = {
+    "af11": "af11",
+    "af12": "af12",
+    "af13": "af13",
+    "af21": "af21",
+    "af22": "af22",
+    "af23": "af23",
+    "af31": "af31",
+    "af32": "af32",
+    "af33": "af33",
+    "af41": "af41",
+    "af42": "af42",
+    "af43": "af43",
+    "cs0": "cs0",
+    "cs1": "cs1",
+    "cs2": "cs2",
+    "cs3": "cs3",
+    "cs4": "cs4",
+    "cs5": "cs5",
+    "cs6": "cs6",
+    "cs7": "cs7",
+    "expedited_forwarding": "expeditedForwarding",
+    "voice_admit": "voiceAdmit",
+    "unspecified": "unspecified",
+}
+
+ORIGINATE_DEFAULT_ROUTE = {"only": "only", "in_addition": "inAddition", "": ""}
+L3OUT_ROUTING_PROTOCOLS = {"bgp": ["bgp"], "ospf": ["ospf"], "bgpOspf": ["bgp", "ospf"], None: [None], "": None, "bgpospf": "bgpOspf", "ospfbgp": "bgpOspf"}
