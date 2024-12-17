@@ -260,12 +260,10 @@ def get_fabric_policy_vlan_pool(mso_template, uuid=None, name=None, fail_module=
               When both UUID and Name are None, and the search list is not empty -> List[Dict]
               When both UUID and Name are None, and the search list is empty -> List[]
     """
-    existing_vlan_pools = mso_template.template.get("fabricPolicyTemplate", {}).get("template", {}).get("vlanPools", [])
+    match = mso_template.template.get("fabricPolicyTemplate", {}).get("template", {}).get("vlanPools", [])
     if uuid or name:  # Query a specific object
-        return mso_template.get_object_by_key_value_pairs(
-            "VLAN Pool", existing_vlan_pools, [KVPair("uuid", uuid) if uuid else KVPair("name", name)], fail_module
-        )
-    return existing_vlan_pools  # Query all objects
+        return mso_template.get_object_by_key_value_pairs("VLAN Pool", match, [KVPair("uuid", uuid) if uuid else KVPair("name", name)], fail_module)
+    return match  # Query all objects
 
 
 if __name__ == "__main__":
