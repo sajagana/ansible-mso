@@ -20,6 +20,13 @@
       use_proxy: '{{ mso_use_proxy | default(true) }}'
       output_level: '{{ mso_output_level | default("info") }}'
 
+# QUERY VERSION
+- name: Query MSO version
+  cisco.mso.mso_version:
+    <<: *mso_info
+    state: query
+  register: version
+
 - name: Ensure site exists
   cisco.mso.mso_site:
     <<: *mso_info
@@ -41,6 +48,16 @@
   - '{{ mso_schema | default("ansible_test") }}_2'
   - '{{ mso_schema | default("ansible_test") }}'
 
+- name: Ensure tenant ansible_test not exists
+  cisco.mso.mso_tenant:
+    <<: *mso_info
+    tenant: ansible_test
+    users:
+      - "{{ mso_username }}"
+    state: absent
+  ignore_errors: true
+  register: ansible_test_absent
+
 - name: Ensure sites removed from tenant ansible_test
   cisco.mso.mso_tenant_site:
     <<: *mso_info
@@ -49,8 +66,20 @@
     state: absent
   loop:
     - '{{ mso_site | default("ansible_test") }}'
+  when: ansible_test_absent.current != {}
+
+- name: Ensure cloud sites removed from tenant ansible_test when MSO version is <= 3.7
+  cisco.mso.mso_tenant_site:
+    <<: *mso_info
+    tenant: ansible_test
+    site: "{{ item }}"
+    state: absent
+  loop:
     - 'aws_{{ mso_site | default("ansible_test") }}'
     - 'azure_{{ mso_site | default("ansible_test") }}'
+  when:
+    - ansible_test_absent.current != {}
+    - version.current.version is version('3.7', '<=')
 
 - name: Ensure tenant ansible_test exists
   cisco.mso.mso_tenant: 
