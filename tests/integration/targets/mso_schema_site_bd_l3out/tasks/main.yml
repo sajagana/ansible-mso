@@ -58,16 +58,31 @@
       - https://{{ apic_hostname }}
       state: present
 
+  - name: Query ansible_test tenant
+    cisco.mso.mso_tenant:
+      <<: *mso_info
+      tenant: ansible_test
+      state: query
+    register: ansible_test_tenant_present
+
   - name: Ensure sites removed from tenant ansible_test
+    cisco.mso.mso_tenant_site:
+      <<: *mso_info
+      tenant: ansible_test
+      site: '{{ mso_site | default("ansible_test") }}'
+      state: absent
+    when: ansible_test_tenant_present.current.name == "ansible_test"
+
+  - name: Ensure cloud sites removed from tenant ansible_test for MSO version <= 3.7
     cisco.mso.mso_tenant_site:
       <<: *mso_info
       tenant: ansible_test
       site: '{{ item }}'
       state: absent
     loop:
-      - '{{ mso_site | default("ansible_test") }}'
       - 'aws_{{ mso_site | default("ansible_test") }}'
       - 'azure_{{ mso_site | default("ansible_test") }}'
+    when: version.current.version is version('3.7', '<=') and ansible_test_tenant_present.current.name == "ansible_test"
 
   - name: Ensure tenant ansible_test exists
     cisco.mso.mso_tenant:
