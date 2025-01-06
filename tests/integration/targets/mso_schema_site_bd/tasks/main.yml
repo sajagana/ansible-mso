@@ -54,12 +54,19 @@
   cisco.mso.mso_tenant_site:
     <<: *mso_info
     tenant: ansible_test
+    site: '{{ mso_site | default("ansible_test") }}'
+    state: absent
+
+- name: Ensure cloud sites removed from tenant ansible_test
+  cisco.mso.mso_tenant_site:
+    <<: *mso_info
+    tenant: ansible_test
     site: '{{ item }}'
     state: absent
   loop:
-    - '{{ mso_site | default("ansible_test") }}'
     - 'aws_{{ mso_site | default("ansible_test") }}'
     - 'azure_{{ mso_site | default("ansible_test") }}'
+  when: version.current.version is version('3.7', '<=')
 
 - name: Ensure tenant ansible_test exists
   cisco.mso.mso_tenant: 
